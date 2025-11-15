@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:eAMDwizualizator"
         xmlns:viewModel="clr-namespace:eAMDwizualizator.ViewModels"
-        xmlns:conv="clr-namespace:eAMDwizualizator.Converters"
         mc:Ignorable="d"
         Title="Wizualizator paczki eADM"
         MinHeight="720" MinWidth="960" 
@@ -24,9 +23,6 @@
         <DataTemplate x:Key="FileItemTemplate">
             <TextBlock Text="{Binding Tytul}" TextTrimming="CharacterEllipsis" />
         </DataTemplate>
-
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <conv:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
     </Window.Resources>
     
     <DockPanel >
@@ -38,9 +34,11 @@
                 <MenuItem Header="_Wyjdź" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem Header="_Widok" TabIndex="2">
-                <!-- checkable item powiązany z widocznością panelu -->
-                <MenuItem Header="Pokaż panel otwierania paczki" IsCheckable="True" 
-                          IsChecked="{Binding IsOpenPackageVisible, Mode=TwoWay}"/>
+                <!-- jeśli zaznaczone, panel nie będzie automatycznie zamykany po otwarciu paczki -->
+                <MenuItem Header="Nie zamykaj panelu otwierania paczki" IsCheckable="True"
+                          IsChecked="{Binding NieZamykajPaneluOtworzPaczke, Mode=TwoWay}"/>
+                <MenuItem Header="Pokaż/ukryj panel otwierania paczki"
+                          Click="ShowOpenPackage_Click"/>
             </MenuItem>
             <MenuItem Header="Pomoc" TabIndex="3">
                 <MenuItem Header="About"/>
@@ -90,8 +88,8 @@
 
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Button x:Name="OpenPackageButton" Width="120" Height="40" Margin="5"
-                    Content="Otwórz paczkę" Click="OtworzPaczke_Click" Cursor="Hand"
-                    ToolTip="Uruchom systemowy eksplorator plików"/>
+                                Content="Otwórz paczkę" Click="OtworzPaczke_Click" Cursor="Hand"
+                                ToolTip="Uruchom systemowy eksplorator plików"/>
                     </StackPanel>
                 </Border>
 

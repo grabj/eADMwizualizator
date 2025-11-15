@@ -5,6 +5,7 @@ using SharpCompress.Archives.Tar;
 using SharpCompress.Archives.Zip;
 using SharpCompress.Common;
 using SharpCompress.Readers;
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -43,8 +44,11 @@ namespace eAMDwizualizator
             {
                 await vm.LoadDirectoryFromArchiveAsync(picker.FileName);
 
-                // po udanym otwarciu schowaj górny panel
-                vm.IsOpenPackageVisible = false;
+                // po udanym otwarciu schowaj górny panel tylko gdy opcja NIEZAMYKAJ jest false
+                if (!vm.NieZamykajPaneluOtworzPaczke)
+                {
+                    vm.IsOpenPackageVisible = false;
+                }
             }
             catch (Exception ex)
             {
@@ -54,6 +58,15 @@ namespace eAMDwizualizator
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
+        }
+        private void ShowOpenPackage_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.DataContext is PlikViewModel vm)
+            {
+                if(vm.NieZamykajPaneluOtworzPaczke)
+                // Toggle visibility of the top panel
+                vm.IsOpenPackageVisible = !vm.IsOpenPackageVisible;
+            }
         }
     }
 }

@@ -92,6 +92,18 @@ namespace eAMDwizualizator.ViewModels
                 OnPropertyChanged();
             }
         }
+        // panel "Otwórz paczkę" nie będzie automatycznie zamykany po otwarciu paczki
+        private bool _nieZamykajPaneluOtworzPaczke = false;
+        public bool NieZamykajPaneluOtworzPaczke
+        {
+            get => _nieZamykajPaneluOtworzPaczke;
+            set
+            {
+                if (_nieZamykajPaneluOtworzPaczke == value) return;
+                _nieZamykajPaneluOtworzPaczke = value;
+                OnPropertyChanged();
+            }
+        }
 
         #endregion
 
