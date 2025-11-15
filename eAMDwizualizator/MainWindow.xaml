@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:eAMDwizualizator"
         xmlns:viewModel="clr-namespace:eAMDwizualizator.ViewModels"
+        xmlns:helpers="clr-namespace:eAMDwizualizator.Helpers"
         mc:Ignorable="d"
         Title="Wizualizator paczki eADM"
         MinHeight="720" MinWidth="960" 
@@ -97,13 +98,16 @@
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
                     <TabControl SelectedIndex="{Binding ActiveTabIndex, Mode=TwoWay}">
                         <TabItem Header="Wszystkie pliki">
-                            <ListView ItemsSource="{Binding PlikiWPaczce}" ItemTemplate="{StaticResource FileItemTemplate}"/>
+                            <ListView ItemsSource="{Binding PlikiWPaczce}" ItemTemplate="{StaticResource FileItemTemplate}"
+                                      SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
                         </TabItem>
                         <TabItem Header="Dokumenty">
-                            <ListView ItemsSource="{Binding Dokumenty}" ItemTemplate="{StaticResource FileItemTemplate}"/>
+                            <ListView ItemsSource="{Binding Dokumenty}" ItemTemplate="{StaticResource FileItemTemplate}"
+                                      SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
                         </TabItem>
                         <TabItem Header="Sprawy">
-                            <ListView ItemsSource="{Binding Sprawy}" ItemTemplate="{StaticResource FileItemTemplate}"/>
+                            <ListView ItemsSource="{Binding Sprawy}" ItemTemplate="{StaticResource FileItemTemplate}"
+                                      SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
                         </TabItem>
                     </TabControl>
                 </ScrollViewer>
@@ -115,9 +119,10 @@
                     <ColumnDefinition Width="2*"/>
                     <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
-                
+
                 <Grid x:Name="Document" Grid.Column="0">
-                    <DocumentViewer BorderThickness="1,0,1,0" Background="#FFEAFFFA" BorderBrush="DimGray"/>
+                    <ContentControl BorderThickness="1,0,1,0" Background="#FFEAFFFA" BorderBrush="DimGray"
+                    helpers:PdfContentControlExtensions.PdfSource="{Binding SelectedFilePath}"/>
                 </Grid>
                 <Grid x:Name="Metadata" Background="#FFE5E5E5" Grid.Column="1">
                     <ListBox x:Name="Metadata_List" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" BorderThickness="0,0,0,0"  />

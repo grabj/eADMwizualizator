@@ -8,6 +8,9 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace eAMDwizualizator.ViewModels
 {
@@ -101,6 +104,34 @@ namespace eAMDwizualizator.ViewModels
             {
                 if (_nieZamykajPaneluOtworzPaczke == value) return;
                 _nieZamykajPaneluOtworzPaczke = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // Właściwości do przeglądania dokumentu pdf
+        private Plik? _selectedPlik;
+        public Plik? SelectedPlik
+        {
+            get => _selectedPlik;
+            set
+            {
+                if (_selectedPlik == value) return;
+                _selectedPlik = value;
+                OnPropertyChanged();
+                // aktualizuj ścieżkę pliku do łatwego bindowania w widoku
+                SelectedFilePath = _selectedPlik?.Sciezka;
+            }
+        }
+
+        private string? _selectedFilePath;
+        // To będzie związywane z przyczepną własnością w widoku (DocumentViewer)
+        public string? SelectedFilePath
+        {
+            get => _selectedFilePath;
+            private set
+            {
+                if (_selectedFilePath == value) return;
+                _selectedFilePath = value;
                 OnPropertyChanged();
             }
         }
