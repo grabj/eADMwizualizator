@@ -1,0 +1,130 @@
+﻿<Window x:Class="eAMDwizualizator.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:eAMDwizualizator"
+        xmlns:viewModel="clr-namespace:eAMDwizualizator.ViewModels"
+        xmlns:conv="clr-namespace:eAMDwizualizator.Converters"
+        mc:Ignorable="d"
+        Title="Wizualizator paczki eADM"
+        MinHeight="720" MinWidth="960" 
+        WindowState="Maximized">
+    <Window.DataContext>
+        <viewModel:PlikViewModel/>
+    </Window.DataContext>
+    
+    <Window.Style>
+        <Style TargetType="{x:Type Window}">
+            <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+        </Style>
+    </Window.Style>
+    <Window.Resources>
+        <DataTemplate x:Key="FileItemTemplate">
+            <TextBlock Text="{Binding Tytul}" TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
+    </Window.Resources>
+    
+    <DockPanel >
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Plik" TabIndex="1">
+                <MenuItem Header="_Otwórz plik..." Click="OtworzPaczke_Click" >
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Wyjdź" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Widok" TabIndex="2">
+                <!-- checkable item powiązany z widocznością panelu -->
+                <MenuItem Header="Pokaż panel otwierania paczki" IsCheckable="True" 
+                          IsChecked="{Binding IsOpenPackageVisible, Mode=TwoWay}"/>
+            </MenuItem>
+            <MenuItem Header="Pomoc" TabIndex="3">
+                <MenuItem Header="About"/>
+            </MenuItem>
+        </Menu>
+        <Grid AllowDrop="True" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="5*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- lewy panel -->
+            <Grid x:Name="Selection" Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <!-- Auto -> jeśli górny panel jest Collapsed, wiersz "zwinie się" i TabControl przesunie się do góry -->
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- top panel (przycisk) - Visibility kontrolowane przez ViewModel -->
+                <Border Grid.Row="0" x:Name="TopPanelBorder" Background="Transparent" Padding="6">
+                    <Border.RenderTransform>
+                        <TranslateTransform Y="-20"/>
+                    </Border.RenderTransform>
+
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Setter Property="Opacity" Value="1"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsOpenPackageVisible}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                 From="-20" To="0" Duration="0:0:0.18" />
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="0" To="1" Duration="0:0:0.18"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Button x:Name="OpenPackageButton" Width="120" Height="40" Margin="5"
+                    Content="Otwórz paczkę" Click="OtworzPaczke_Click" Cursor="Hand"
+                    ToolTip="Uruchom systemowy eksplorator plików"/>
+                    </StackPanel>
+                </Border>
+
+                <!--widoki w nawigacji -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
+                    <TabControl SelectedIndex="{Binding ActiveTabIndex, Mode=TwoWay}">
+                        <TabItem Header="Wszystkie pliki">
+                            <ListView ItemsSource="{Binding PlikiWPaczce}" ItemTemplate="{StaticResource FileItemTemplate}"/>
+                        </TabItem>
+                        <TabItem Header="Dokumenty">
+                            <ListView ItemsSource="{Binding Dokumenty}" ItemTemplate="{StaticResource FileItemTemplate}"/>
+                        </TabItem>
+                        <TabItem Header="Sprawy">
+                            <ListView ItemsSource="{Binding Sprawy}" ItemTemplate="{StaticResource FileItemTemplate}"/>
+                        </TabItem>
+                    </TabControl>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- główny content -->
+            <Grid x:Name="Content" Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+                
+                <Grid x:Name="Document" Grid.Column="0">
+                    <DocumentViewer BorderThickness="1,0,1,0" Background="#FFEAFFFA" BorderBrush="DimGray"/>
+                </Grid>
+                <Grid x:Name="Metadata" Background="#FFE5E5E5" Grid.Column="1">
+                    <ListBox x:Name="Metadata_List" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" BorderThickness="0,0,0,0"  />
+                </Grid>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>
