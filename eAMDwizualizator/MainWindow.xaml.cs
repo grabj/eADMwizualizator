@@ -63,8 +63,7 @@ namespace eAMDwizualizator
         {
             if (this.DataContext is PlikViewModel vm)
             {
-                if(vm.NieZamykajPaneluOtworzPaczke)
-                // Toggle visibility of the top panel
+                // zawsze przełączaj widoczność panelu niezależnie od ustawienia "NieZamykajPaneluOtworzPaczke"
                 vm.IsOpenPackageVisible = !vm.IsOpenPackageVisible;
             }
         }

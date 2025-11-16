@@ -24,6 +24,12 @@ namespace eAMDwizualizator
 
             base.OnStartup(e);
 
+            // Asynchroniczne sprzątanie starych katalogów temp (np. starszych niż dzień)
+            System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+            {
+                Helpers.TempDirectoryManager.CleanupOldRunDirs(TimeSpan.FromDays(1));
+            });
+
             // Subskrybuj różne scenariusze zamknięcia — wszystkie wywołują jedną metodę sprzątającą.
             this.Exit += (object? sender, ExitEventArgs ev) => CleanTemp();
             this.DispatcherUnhandledException += (object? sender, DispatcherUnhandledExceptionEventArgs ev) => CleanTemp();

@@ -105,6 +105,13 @@ namespace eAMDwizualizator.ViewModels
                 if (_nieZamykajPaneluOtworzPaczke == value) return;
                 _nieZamykajPaneluOtworzPaczke = value;
                 OnPropertyChanged();
+
+                // Jeśli użytkownik zaznaczy opcję — upewnij się że panel jest widoczny.
+                // Jeśli opcja zostanie odznaczona — nie zamykaj).
+                if (_nieZamykajPaneluOtworzPaczke)
+                {
+                    IsOpenPackageVisible = true;
+                }
             }
         }
 
@@ -188,34 +195,38 @@ namespace eAMDwizualizator.ViewModels
             if (!PaczkaEadmRozszerzenia.Contains(ext))
                 throw new NotSupportedException("Nieobsługiwany format pliku.");
 
-            string targetDir = Path.Combine(Environment.CurrentDirectory, "temp");
-
-            try
-            {
-                if (Directory.Exists(targetDir))
-                    Directory.Delete(targetDir, true);
-            }
-            catch
-            {
-                // ignoruj błędy
-            }
-
-            Directory.CreateDirectory(targetDir);
+            // stworzenie unikalnego katalogu dla tej sesji/uruchomienia
+            string targetDir = Helpers.TempDirectoryManager.CreateRunTempDir();
 
             await Task.Run(() =>
             {
-                using (Stream fileStream = File.OpenRead(archivePath))
+                // otwieramy archiwum z FileShare.Read, żeby nie blokować innych odczytów
+                using (Stream fileStream = File.Open(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 using (var reader = ReaderFactory.Open(fileStream))
                 {
                     while (reader.MoveToNextEntry())
                     {
                         if (!reader.Entry.IsDirectory)
                         {
-                            reader.WriteEntryToDirectory(targetDir, new ExtractionOptions()
+                            // retry per plik
+                            var attempts = 3;
+                            for (int i = 0; i < attempts; i++)
                             {
-                                ExtractFullPath = true,
-                                Overwrite = true
-                            });
+                                try
+                                {
+                                    reader.WriteEntryToDirectory(targetDir, new ExtractionOptions
+                                    {
+                                        ExtractFullPath = true,
+                                        Overwrite = true
+                                    });
+                                    break;
+                                }
+                                catch (IOException)
+                                {
+                                    if (i == attempts - 1) throw;
+                                    Thread.Sleep(200);
+                                }
+                            }
                         }
                     }
                 }

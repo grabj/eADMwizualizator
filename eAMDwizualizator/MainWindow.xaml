@@ -36,7 +36,8 @@
             </MenuItem>
             <MenuItem Header="_Widok" TabIndex="2">
                 <!-- jeśli zaznaczone, panel nie będzie automatycznie zamykany po otwarciu paczki -->
-                <MenuItem Header="Nie zamykaj panelu otwierania paczki" IsCheckable="True"
+                <MenuItem x:Name="AlwaysShowOpenPackageMenuItem"
+                          Header="Nie zamykaj panelu otwierania paczki" IsCheckable="True"
                           IsChecked="{Binding NieZamykajPaneluOtworzPaczke, Mode=TwoWay}"/>
                 <MenuItem Header="Pokaż/ukryj panel otwierania paczki"
                           Click="ShowOpenPackage_Click"/>
