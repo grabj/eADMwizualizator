@@ -7,7 +7,6 @@
         xmlns:viewModel="clr-namespace:eAMDwizualizator.ViewModels"
         xmlns:helpers="clr-namespace:eAMDwizualizator.Helpers"
         mc:Ignorable="d"
-        Title="Wizualizator paczki eADM"
         MinHeight="720" MinWidth="960" 
         WindowState="Maximized">
     <Window.DataContext>
@@ -20,13 +19,14 @@
             <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
         </Style>
     </Window.Style>
+    
     <Window.Resources>
         <DataTemplate x:Key="FileItemTemplate">
             <TextBlock Text="{Binding Tytul}" TextTrimming="CharacterEllipsis" />
         </DataTemplate>
     </Window.Resources>
     
-    <DockPanel >
+    <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Plik" TabIndex="1">
                 <MenuItem Header="_Otwórz plik..." Click="OtworzPaczke_Click" >
@@ -46,89 +46,124 @@
                 <MenuItem Header="About"/>
             </MenuItem>
         </Menu>
+
+        <!-- Główny grid z miejscem na splitter między Selection a Content -->
         <Grid AllowDrop="True" >
             <Grid.ColumnDefinitions>
+                <!-- lewa kolumna -->
                 <ColumnDefinition Width="2*"/>
+                <!-- miejsce dla splittera -->
+                <ColumnDefinition Width="6"/>
+                <!-- prawa kolumna -->
                 <ColumnDefinition Width="5*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- lewy panel -->
-            <Grid x:Name="Selection" Grid.Column="0">
-                <Grid.RowDefinitions>
-                    <!-- Auto -> jeśli górny panel jest Collapsed, wiersz "zwinie się" i TabControl przesunie się do góry -->
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+            <!-- lewy panel - opakowany w Border dla czytelnego obramowania -->
+            <Border Grid.Column="0" x:Name="SelectionBorder" BorderThickness="1" BorderBrush="DimGray" Background="WhiteSmoke" Margin="0">
+                <Grid x:Name="Selection">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                <!-- top panel (przycisk) - Visibility kontrolowane przez ViewModel -->
-                <Border Grid.Row="0" x:Name="TopPanelBorder" Background="Transparent" Padding="6">
-                    <Border.RenderTransform>
-                        <TranslateTransform Y="-20"/>
-                    </Border.RenderTransform>
+                    <Border Grid.Row="0" x:Name="TopPanelBorder" Padding="1">
+                        <Border.RenderTransform>
+                            <TranslateTransform Y="-20"/>
+                        </Border.RenderTransform>
 
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Setter Property="Opacity" Value="1"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsOpenPackageVisible}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                    <DataTrigger.EnterActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                                 From="-20" To="0" Duration="0:0:0.18" />
-                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                 From="0" To="1" Duration="0:0:0.18"/>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </DataTrigger.EnterActions>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Setter Property="Opacity" Value="1"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsOpenPackageVisible}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                     From="-20" To="0" Duration="0:0:0.18" />
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                     From="0" To="1" Duration="0:0:0.18"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
 
-                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Button x:Name="OpenPackageButton" Width="120" Height="40" Margin="5"
-                                Content="Otwórz paczkę" Click="OtworzPaczke_Click" Cursor="Hand"
-                                ToolTip="Uruchom systemowy eksplorator plików"/>
-                    </StackPanel>
-                </Border>
+                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Button x:Name="OpenPackageButton" Width="120" Height="40" Margin="1,5,1,5"
+                                    Content="Otwórz paczkę" Click="OtworzPaczke_Click" Cursor="Hand"
+                                    ToolTip="Uruchom systemowy eksplorator plików"/>
+                        </StackPanel>
+                    </Border>
 
-                <!--widoki w nawigacji -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
-                    <TabControl SelectedIndex="{Binding ActiveTabIndex, Mode=TwoWay}">
-                        <TabItem Header="Wszystkie pliki">
-                            <ListView ItemsSource="{Binding PlikiWPaczce}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                      SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
-                        </TabItem>
-                        <TabItem Header="Dokumenty">
-                            <ListView ItemsSource="{Binding Dokumenty}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                      SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
-                        </TabItem>
-                        <TabItem Header="Sprawy">
-                            <ListView ItemsSource="{Binding Sprawy}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                      SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
-                        </TabItem>
-                    </TabControl>
-                </ScrollViewer>
-            </Grid>
-
-            <!-- główny content -->
-            <Grid x:Name="Content" Grid.Column="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="1*"/>
-                </Grid.ColumnDefinitions>
-
-                <Grid x:Name="Document" Grid.Column="0">
-                    <ContentControl BorderThickness="1,0,1,0" Background="#FFEAFFFA" BorderBrush="DimGray"
-                    helpers:PdfContentControlExtensions.PdfSource="{Binding SelectedFilePath}"/>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
+                        <TabControl SelectedIndex="{Binding ActiveTabIndex, Mode=TwoWay}">
+                            <TabItem Header="Wszystkie pliki">
+                                <ListView ItemsSource="{Binding PlikiWPaczce}" ItemTemplate="{StaticResource FileItemTemplate}"
+                                          SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
+                            </TabItem>
+                            <TabItem Header="Dokumenty">
+                                <ListView ItemsSource="{Binding Dokumenty}" ItemTemplate="{StaticResource FileItemTemplate}"
+                                          SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
+                            </TabItem>
+                            <TabItem Header="Sprawy">
+                                <ListView ItemsSource="{Binding Sprawy}" ItemTemplate="{StaticResource FileItemTemplate}"
+                                          SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
+                            </TabItem>
+                        </TabControl>
+                    </ScrollViewer>
                 </Grid>
-                <Grid x:Name="Metadata" Background="#FFE5E5E5" Grid.Column="1">
-                    <ListBox x:Name="Metadata_List" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" BorderThickness="0,0,0,0"  />
+            </Border>
+
+            <!-- splitter między lewą a prawą częścią -->
+            <GridSplitter Grid.Column="1"
+                          Width="5"
+                          Background="#FFCCCCCC"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Stretch"
+                          ShowsPreview="True"
+                          ResizeBehavior="PreviousAndNext"
+                          ResizeDirection="Columns"
+                          Cursor="SizeWE"/>
+
+            <!-- główny content - opakowany w Border -->
+            <Border Grid.Column="2" x:Name="ContentBorder" BorderThickness="1" BorderBrush="DimGray" Background="Transparent" Margin="0">
+                <Grid x:Name="Content">
+                    <Grid.ColumnDefinitions>
+                        <!-- dokument -->
+                        <ColumnDefinition Width="2*"/>
+                        <!-- splitter wewnętrzny -->
+                        <ColumnDefinition Width="5"/>
+                        <!-- metadata -->
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Document z czytelnym obramowaniem -->
+                    <Border Grid.Column="0" BorderBrush="DimGray" Background="#FFD8E8F7" BorderThickness="0,0,1,0"  Margin="0">
+                        <ContentControl helpers:PdfContentControlExtensions.PdfSource="{Binding SelectedFilePath}"/>
+                    </Border>
+
+                    <!-- splitter między Document a Metadata -->
+                    <GridSplitter Grid.Column="1"
+                                  Width="5"
+                                  Background="#FFCCCCCC"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Stretch"
+                                  ShowsPreview="True"
+                                  ResizeBehavior="PreviousAndNext"
+                                  ResizeDirection="Columns"
+                                  Cursor="SizeWE"/>
+
+                    <!-- Metadata  -->
+                    <Border Grid.Column="2" Background="#FFE5E5E5" BorderThickness="1,0,0,0" BorderBrush="DimGray" Margin="0">
+                        <ListBox x:Name="Metadata_List" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" BorderThickness="0"  />
+                    </Border>
                 </Grid>
-            </Grid>
+            </Border>
         </Grid>
     </DockPanel>
 </Window>

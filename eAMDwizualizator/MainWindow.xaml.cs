@@ -1,22 +1,8 @@
 ﻿using eAMDwizualizator.ViewModels;
 using Microsoft.Win32;
-using SharpCompress.Archives;
-using SharpCompress.Archives.Tar;
-using SharpCompress.Archives.Zip;
-using SharpCompress.Common;
-using SharpCompress.Readers;
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 
 namespace eAMDwizualizator
 {
@@ -25,9 +11,13 @@ namespace eAMDwizualizator
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly string _baseTitle;
+        private static string Tytul = "Twoja paczka eADM";
         public MainWindow()
         {
             InitializeComponent();
+            this.Title = Tytul;
+            _baseTitle = this.Title; // zachowaj oryginalny tytuł, używany jako prefiks
         }
         private async void OtworzPaczke_Click(object sender, RoutedEventArgs e)
         {
@@ -48,16 +38,24 @@ namespace eAMDwizualizator
                 if (!vm.NieZamykajPaneluOtworzPaczke)
                 {
                     vm.IsOpenPackageVisible = false;
+                    // ustaw tytuł okna z nazwą otwartego archiwum 
+                }
+
+                try
+                {
+                            var displayName = Path.GetFileName(picker.FileName);
+                            this.Title = Tytul + " - " + displayName;
+                }
+                catch
+                {
+                        // Nie przerywaj działania aplikacji jeżeli ustawienie tytułu się nie powiedzie
+                        this.Title = Tytul;
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Błąd: " + ex.Message);
             }
-        }
-        private void Exit_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
         }
         private void ShowOpenPackage_Click(object sender, RoutedEventArgs e)
         {
@@ -66,6 +64,10 @@ namespace eAMDwizualizator
                 // zawsze przełączaj widoczność panelu niezależnie od ustawienia "NieZamykajPaneluOtworzPaczke"
                 vm.IsOpenPackageVisible = !vm.IsOpenPackageVisible;
             }
+        }
+        private void Exit_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
         }
     }
 }
