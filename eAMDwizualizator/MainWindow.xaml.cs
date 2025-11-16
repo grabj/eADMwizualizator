@@ -6,18 +6,19 @@ using System.Windows;
 
 namespace eAMDwizualizator
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly string _baseTitle;
         private static string Tytul = "Twoja paczka eADM";
+ 
+        private const double DefaultFontSize = 12.0;
+        private const double MinFontSize = 8.0;
+        private const double MaxFontSize = 24.0;
+
         public MainWindow()
         {
             InitializeComponent();
             this.Title = Tytul;
-            _baseTitle = this.Title; // zachowaj oryginalny tytuł, używany jako prefiks
+
         }
         private async void OtworzPaczke_Click(object sender, RoutedEventArgs e)
         {
@@ -43,8 +44,8 @@ namespace eAMDwizualizator
 
                 try
                 {
-                            var displayName = Path.GetFileName(picker.FileName);
-                            this.Title = Tytul + " - " + displayName;
+                    var displayName = Path.GetFileName(picker.FileName);
+                    this.Title = Tytul + " - " + displayName;
                 }
                 catch
                 {
@@ -57,6 +58,43 @@ namespace eAMDwizualizator
                 MessageBox.Show("Błąd: " + ex.Message);
             }
         }
+        #region Zmiana rozmiaru czcionki
+        private void ResetFont_Click(object sender, RoutedEventArgs e)
+        {
+            // ustaw zasób aplikacji
+            SetAppFontSize(DefaultFontSize);
+
+            // wymuś synchronizację suwaka — suwak też wyzwoli ValueChanged, ale ustawiamy bezpiecznie.
+            if (FontSizeSlider != null)
+            {
+                // bezpośrednie ustawienie Value przesunie suwak i zaktualizuje widok
+                FontSizeSlider.Value = DefaultFontSize;
+            }
+        }
+        // Jedna definicja SetAppFontSize — statyczna, bo operuje na Application.Current.Resources
+        private static void SetAppFontSize(double size)
+        {
+            if (Application.Current == null) return;
+            Application.Current.Resources["AppFontSize"] = size;
+        }
+        private double GetAppFontSize()
+        {
+            if (Application.Current == null) return DefaultFontSize;
+            if (Application.Current.Resources.Contains("AppFontSize") &&
+                Application.Current.Resources["AppFontSize"] is double value)
+            {
+                return value;
+            }
+            return DefaultFontSize;
+        }
+        // Obsługa suwaka - przy zmianie aktualizuje zasób aplikacji
+        private void FontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            // ograniczenie zakresu - dodatkowa ochrona
+            var v = Math.Clamp(e.NewValue, MinFontSize, MaxFontSize);
+            SetAppFontSize(v);
+        }
+        #endregion
         private void ShowOpenPackage_Click(object sender, RoutedEventArgs e)
         {
             if (this.DataContext is PlikViewModel vm)

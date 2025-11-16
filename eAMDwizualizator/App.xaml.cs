@@ -15,12 +15,22 @@ namespace eAMDwizualizator
     public partial class App : Application
     {
         private static readonly string SciezkaAktywnejPaczki = @".\temp";
+        private const double DefaultFontSize = 12.0;
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            XElement wzorXsd;
-
-            string sciezkaXsd = @".\nes20.xsd";
+            // Ustaw domyślny rozmiar czcionki globalnie przed inicjalizacją okien, żeby Window/MainWindow mogły od razu odczytać zasób.
+            try
+            {
+                if (!this.Resources.Contains("AppFontSize") || !(this.Resources["AppFontSize"] is double))
+                {
+                    this.Resources["AppFontSize"] = DefaultFontSize;
+                }
+            }
+            catch
+            {
+                // Nie przerywamy uruchamiania aplikacji, ale pozostawiamy fallback.
+            }
 
             base.OnStartup(e);
 

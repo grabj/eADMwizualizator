@@ -12,40 +12,71 @@
     <Window.DataContext>
         <viewModel:PlikViewModel/>
     </Window.DataContext>
-    
+
     <Window.Style>
         <Style TargetType="{x:Type Window}">
             <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
             <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
         </Style>
     </Window.Style>
-    
+
     <Window.Resources>
         <DataTemplate x:Key="FileItemTemplate">
             <TextBlock Text="{Binding Tytul}" TextTrimming="CharacterEllipsis" />
         </DataTemplate>
     </Window.Resources>
-    
+
     <DockPanel>
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_Plik" TabIndex="1">
-                <MenuItem Header="_Otwórz plik..." Click="OtworzPaczke_Click" >
+        <DockPanel DockPanel.Dock="Top" LastChildFill="True" Margin="0">
+            <!-- Suwak zadokowany po prawej -->
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Background="#FFF0F0F0">                
+                <TextBlock Text="Rozmiar czcionki" VerticalAlignment="Center" Margin="4,0" ToolTip="Ustaw rozmiar czcionki" />
+                <!-- Inicjalizacja opźniona, żeby pobrać wartość z Resource AppFontSize -->
+                <Slider x:Name="FontSizeSlider"
+                        Width="200"
+                        Minimum="8" Maximum="24" 
+                        TickFrequency="1"
+                        IsSnapToTickEnabled="True"
+                        Value="{Binding FontSize, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}"
+                        ValueChanged="FontSizeSlider_ValueChanged"
+                        SmallChange="1" LargeChange="1"
+                        VerticalAlignment="Center"
+                        Margin="8,0" />
+                <TextBlock Text="{Binding Value, ElementName=FontSizeSlider, StringFormat='{}{0:0}'}"
+                           VerticalAlignment="Center" Margin="2,0,4,0"/>
+                <!-- Przycisk szybkiego resetu -->
+                <Button Margin="6,0,6,0"
+                        ToolTip="Zresetuj rozmiar czcionki"
+                        Click="ResetFont_Click"
+                        VerticalAlignment="Center" Background="{x:Null}" BorderBrush="{x:Null}">
+                    <TextBlock Text="⟲" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+            </StackPanel>
+
+            <!-- Menu wypełnia pozostałą przestrzeń po lewej -->
+            <Menu BorderThickness="0,0,1,0" BorderBrush="DimGray">
+                <MenuItem Header="_Plik" TabIndex="1">
+                    <MenuItem Header="_Otwórz plik..." Click="OtworzPaczke_Click" />
+                    <Separator/>
+                    <MenuItem Header="_Wyjdź" Click="Exit_Click"/>
                 </MenuItem>
-                <Separator/>
-                <MenuItem Header="_Wyjdź" Click="Exit_Click"/>
-            </MenuItem>
-            <MenuItem Header="_Widok" TabIndex="2">
-                <!-- jeśli zaznaczone, panel nie będzie automatycznie zamykany po otwarciu paczki -->
-                <MenuItem x:Name="AlwaysShowOpenPackageMenuItem"
+
+                <MenuItem Header="_Widok" TabIndex="2">
+                    <MenuItem Header="Pokaż/ukryj panel otwierania paczki"
+                          Click="ShowOpenPackage_Click"/>
+                    <!-- jeśli zaznaczone, panel nie będzie automatycznie zamykany po otwarciu paczki -->
+                    <MenuItem x:Name="AlwaysShowOpenPackageMenuItem"
                           Header="Nie zamykaj panelu otwierania paczki" IsCheckable="True"
                           IsChecked="{Binding NieZamykajPaneluOtworzPaczke, Mode=TwoWay}"/>
-                <MenuItem Header="Pokaż/ukryj panel otwierania paczki"
-                          Click="ShowOpenPackage_Click"/>
-            </MenuItem>
-            <MenuItem Header="Pomoc" TabIndex="3">
-                <MenuItem Header="About"/>
-            </MenuItem>
-        </Menu>
+                    <Separator/>
+                    <MenuItem Header="Zresetuj rozmiar czcionki" Click="ResetFont_Click"/>
+                    <Separator/>
+                </MenuItem>
+                <MenuItem Header="Pomoc" TabIndex="3">
+                    <MenuItem Header="About"/>
+                </MenuItem>
+            </Menu>
+        </DockPanel>
 
         <!-- Główny grid z miejscem na splitter między Selection a Content -->
         <Grid AllowDrop="True" >
@@ -58,7 +89,7 @@
                 <ColumnDefinition Width="5*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- lewy panel - opakowany w Border dla czytelnego obramowania -->
+            <!-- lewy panel -->
             <Border Grid.Column="0" x:Name="SelectionBorder" BorderThickness="1" BorderBrush="DimGray" Background="WhiteSmoke" Margin="0">
                 <Grid x:Name="Selection">
                     <Grid.RowDefinitions>
@@ -66,6 +97,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
+                    <!-- panel Otwórz Paczkę -->
                     <Border Grid.Row="0" x:Name="TopPanelBorder" Padding="1">
                         <Border.RenderTransform>
                             <TranslateTransform Y="-20"/>
@@ -96,10 +128,12 @@
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Button x:Name="OpenPackageButton" Width="120" Height="40" Margin="1,5,1,5"
                                     Content="Otwórz paczkę" Click="OtworzPaczke_Click" Cursor="Hand"
+                                    FontSize="15"
                                     ToolTip="Uruchom systemowy eksplorator plików"/>
                         </StackPanel>
                     </Border>
 
+                    <!-- Listy plików -->
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
                         <TabControl SelectedIndex="{Binding ActiveTabIndex, Mode=TwoWay}">
                             <TabItem Header="Wszystkie pliki">
@@ -142,7 +176,7 @@
                         <ColumnDefinition Width="1*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Document z czytelnym obramowaniem -->
+                    <!-- Wyświtlanie dokumentu -->
                     <Border Grid.Column="0" BorderBrush="DimGray" Background="#FFD8E8F7" BorderThickness="0,0,1,0"  Margin="0">
                         <ContentControl helpers:PdfContentControlExtensions.PdfSource="{Binding SelectedFilePath}"/>
                     </Border>
