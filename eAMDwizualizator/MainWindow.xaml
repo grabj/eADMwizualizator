@@ -29,7 +29,7 @@
     <DockPanel>
         <DockPanel DockPanel.Dock="Top" LastChildFill="True" Margin="0">
             <!-- Suwak zadokowany po prawej -->
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Background="#FFF0F0F0">                
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">                
                 <TextBlock Text="Rozmiar czcionki" VerticalAlignment="Center" Margin="4,0" ToolTip="Ustaw rozmiar czcionki" />
                 <!-- Inicjalizacja opźniona, żeby pobrać wartość z Resource AppFontSize -->
                 <Slider x:Name="FontSizeSlider"
@@ -45,7 +45,7 @@
                 <TextBlock Text="{Binding Value, ElementName=FontSizeSlider, StringFormat='{}{0:0}'}"
                            VerticalAlignment="Center" Margin="2,0,4,0"/>
                 <!-- Przycisk szybkiego resetu -->
-                <Button Margin="6,0,6,0"
+                <Button Margin="6,0"
                         ToolTip="Zresetuj rozmiar czcionki"
                         Click="ResetFont_Click"
                         VerticalAlignment="Center" Background="{x:Null}" BorderBrush="{x:Null}">
@@ -62,35 +62,36 @@
                 </MenuItem>
 
                 <MenuItem Header="_Widok" TabIndex="2">
-                    <MenuItem Header="Pokaż/ukryj panel otwierania paczki"
+                    <MenuItem Header="Pokaż/ukryj panel otwierania paczki" ToolTip="Zmiana widoczości przycisku otwierania paczki"
                           Click="ShowOpenPackage_Click"/>
                     <!-- jeśli zaznaczone, panel nie będzie automatycznie zamykany po otwarciu paczki -->
                     <MenuItem x:Name="AlwaysShowOpenPackageMenuItem"
                           Header="Nie zamykaj panelu otwierania paczki" IsCheckable="True"
-                          IsChecked="{Binding NieZamykajPaneluOtworzPaczke, Mode=TwoWay}"/>
+                          IsChecked="{Binding NieZamykajPaneluOtworzPaczke, Mode=TwoWay}"
+                          ToolTip="Przycisk 'Otwórz paczkę' pozostanie widoczny po zaimportowaniu paczki"/>
                     <Separator/>
                     <MenuItem Header="Zresetuj rozmiar czcionki" Click="ResetFont_Click"/>
                     <Separator/>
                 </MenuItem>
                 <MenuItem Header="Pomoc" TabIndex="3">
-                    <MenuItem Header="About"/>
+                    <MenuItem Header="O programie"/>
                 </MenuItem>
             </Menu>
         </DockPanel>
 
         <!-- Główny grid z miejscem na splitter między Selection a Content -->
-        <Grid AllowDrop="True" >
+        <Grid>
             <Grid.ColumnDefinitions>
-                <!-- lewa kolumna -->
+                <!-- lewy panel -->
                 <ColumnDefinition Width="2*"/>
                 <!-- miejsce dla splittera -->
-                <ColumnDefinition Width="6"/>
-                <!-- prawa kolumna -->
+                <ColumnDefinition Width="5"/>
+                <!-- główny content -->
                 <ColumnDefinition Width="5*"/>
             </Grid.ColumnDefinitions>
 
             <!-- lewy panel -->
-            <Border Grid.Column="0" x:Name="SelectionBorder" BorderThickness="1" BorderBrush="DimGray" Background="WhiteSmoke" Margin="0">
+            <Border Grid.Column="0" x:Name="SelectionBorder" BorderThickness="0,0,1,1" BorderBrush="DimGray" Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}" Margin="0">
                 <Grid x:Name="Selection">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -126,10 +127,10 @@
                         </Border.Style>
 
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Button x:Name="OpenPackageButton" Width="120" Height="40" Margin="1,5,1,5"
-                                    Content="Otwórz paczkę" Click="OtworzPaczke_Click" Cursor="Hand"
-                                    FontSize="15"
-                                    ToolTip="Uruchom systemowy eksplorator plików"/>
+                            <Button x:Name="OpenPackageButton" Width="120" Height="40" Margin="1,3,1,5"
+                                    Content="_Otwórz paczkę" Click="OtworzPaczke_Click" Cursor="Hand"
+                                    FontSize="15" Background="#FFD8E8F7"
+                                    ToolTip="Uruchomienie systemowego eksploratora plików"/>
                         </StackPanel>
                     </Border>
 
@@ -156,7 +157,7 @@
             <!-- splitter między lewą a prawą częścią -->
             <GridSplitter Grid.Column="1"
                           Width="5"
-                          Background="#FFCCCCCC"
+                          Background="#FFCCCCCC" BorderThickness="0,1" BorderBrush="DimGray"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Stretch"
                           ShowsPreview="True"
