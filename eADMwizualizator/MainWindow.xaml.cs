@@ -1,11 +1,11 @@
-﻿using eAMDwizualizator.ViewModels;
-using eAMDwizualizator.Helpers;
+﻿using eADMwizualizator.ViewModels;
+using eADMwizualizator.Helpers;
 using Microsoft.Win32;
 using System;
 using System.IO;
 using System.Windows;
 
-namespace eAMDwizualizator
+namespace eADMwizualizator
 {
     public partial class MainWindow : Window
     {

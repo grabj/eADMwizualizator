@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace eAMDwizualizator.Commands
+namespace eADMwizualizator.Commands
 {
     public class RelayCommand :ICommand
     {

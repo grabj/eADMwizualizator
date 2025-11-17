@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace eAMDwizualizator.Helpers
+namespace eADMwizualizator.Helpers
 {
     // helper tworzy WebBrowser i nawiguje do pliku.
     public static class PdfContentControlExtensions

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Input;
 
-namespace eAMDwizualizator.Commands
+namespace eADMwizualizator.Commands
 {
     /// <summary>
     /// An always executable command

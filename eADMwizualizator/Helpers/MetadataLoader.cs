@@ -1,9 +1,9 @@
-using eAMDwizualizator.Models;
+using eADMwizualizator.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace eAMDwizualizator.Helpers
+namespace eADMwizualizator.Helpers
 {
     internal static class MetadataLoader
     {

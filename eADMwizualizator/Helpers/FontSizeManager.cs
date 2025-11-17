@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 
-namespace eAMDwizualizator.Helpers
+namespace eADMwizualizator.Helpers
 {
     internal static class FontSizeManager
     {

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
 
-namespace eAMDwizualizator.Models
+namespace eADMwizualizator.Models
 {
     public class SubMenu
     {

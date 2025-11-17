@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace eAMDwizualizator.Helpers
+namespace eADMwizualizator.Helpers
 {
     public static class TempDirectoryManager
     {

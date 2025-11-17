@@ -1,10 +1,10 @@
-using eAMDwizualizator.Models;
+using eADMwizualizator.Models;
 using System.IO;
 using System.Linq;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 
-namespace eAMDwizualizator.Helpers
+namespace eADMwizualizator.Helpers
 {
     internal static class PathHelpers
     {

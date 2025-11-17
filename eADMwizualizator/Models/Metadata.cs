@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace eAMDwizualizator.Models
+namespace eADMwizualizator.Models
 {
     class Metadata : Models.Plik
     {

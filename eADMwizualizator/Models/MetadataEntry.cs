@@ -1,6 +1,6 @@
 using System;
 
-namespace eAMDwizualizator.Models
+namespace eADMwizualizator.Models
 {
     public class MetadataEntry
     {

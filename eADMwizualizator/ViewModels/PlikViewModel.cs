@@ -1,6 +1,6 @@
-﻿using eAMDwizualizator.Commands;
-using eAMDwizualizator.Models;
-using eAMDwizualizator.Helpers;
+﻿using eADMwizualizator.Commands;
+using eADMwizualizator.Models;
+using eADMwizualizator.Helpers;
 using SharpCompress.Common;
 using SharpCompress.Readers;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Xml.Linq;
 
-namespace eAMDwizualizator.ViewModels
+namespace eADMwizualizator.ViewModels
 {
     public class PlikViewModel : INotifyPropertyChanged
     {

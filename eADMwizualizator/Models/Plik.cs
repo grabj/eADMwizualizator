@@ -1,11 +1,11 @@
-﻿using eAMDwizualizator.Helpers;
+﻿using eADMwizualizator.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace eAMDwizualizator.Models
+namespace eADMwizualizator.Models
 {
     public class Plik
     {

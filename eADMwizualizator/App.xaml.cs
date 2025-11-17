@@ -6,12 +6,8 @@ using System.Windows;
 using System.Windows.Threading;
 using System.Xml.Linq;
 
-namespace eAMDwizualizator
+namespace eADMwizualizator
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
-    /// 
     public partial class App : Application
     {
         private static readonly string SciezkaAktywnejPaczki = @".\temp";
