@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace eAMDwizualizator.Models
 {
-    class Dokument : Models.Plik
+    class Metadata : Models.Plik
     {
         public string? Id { get; set; }
         public DateTime? Data { get; set; }
@@ -24,7 +24,7 @@ namespace eAMDwizualizator.Models
         public string? Tematyka { get; set; }
         public string? Uprawnienia { get; set; }
 
-        public Dokument(string id, string sciezka, string tytul, DateTime? data, string? format, string? dostep, string? typ, string? grupowanie, string? tworca, string? nadawca, string? odbiorca, string? relacja, string? klasyfikacja, string? jezyk, string? opis, string? tematyka, string? uprawnienia) : base(sciezka, tytul)
+        public Metadata(string id, string sciezka, string tytul, DateTime? data, string? format, string? dostep, string? typ, string? grupowanie, string? tworca, string? nadawca, string? odbiorca, string? relacja, string? klasyfikacja, string? jezyk, string? opis, string? tematyka, string? uprawnienia) : base(sciezka, tytul)
         {
             Id = id;
             Sciezka = sciezka;
@@ -45,7 +45,7 @@ namespace eAMDwizualizator.Models
             Uprawnienia = uprawnienia;
         }
 
-        public Dokument(string sciezka, string tytul, string? id) : base(sciezka, tytul)
+        public Metadata(string sciezka, string tytul, string? id) : base(sciezka, tytul)
         {
             Id = id;
             Sciezka = sciezka;

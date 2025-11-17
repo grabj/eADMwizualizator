@@ -1,4 +1,5 @@
 ﻿using eAMDwizualizator.ViewModels;
+using eAMDwizualizator.Helpers;
 using Microsoft.Win32;
 using System;
 using System.IO;
@@ -62,7 +63,7 @@ namespace eAMDwizualizator
         private void ResetFont_Click(object sender, RoutedEventArgs e)
         {
             // ustaw zasób aplikacji
-            SetAppFontSize(DefaultFontSize);
+            FontSizeManager.SetAppFontSize(DefaultFontSize);
 
             // wymuś synchronizację suwaka — suwak też wyzwoli ValueChanged, ale ustawiamy bezpiecznie.
             if (FontSizeSlider != null)
@@ -71,28 +72,17 @@ namespace eAMDwizualizator
                 FontSizeSlider.Value = DefaultFontSize;
             }
         }
-        // Jedna definicja SetAppFontSize — statyczna, bo operuje na Application.Current.Resources
-        private static void SetAppFontSize(double size)
-        {
-            if (Application.Current == null) return;
-            Application.Current.Resources["AppFontSize"] = size;
-        }
+        // Jedna definicja SetAppFontSize — przeniesiona do helpera
         private double GetAppFontSize()
         {
-            if (Application.Current == null) return DefaultFontSize;
-            if (Application.Current.Resources.Contains("AppFontSize") &&
-                Application.Current.Resources["AppFontSize"] is double value)
-            {
-                return value;
-            }
-            return DefaultFontSize;
+            return FontSizeManager.GetAppFontSize(DefaultFontSize);
         }
         // Obsługa suwaka - przy zmianie aktualizuje zasób aplikacji
         private void FontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             // ograniczenie zakresu - dodatkowa ochrona
             var v = Math.Clamp(e.NewValue, MinFontSize, MaxFontSize);
-            SetAppFontSize(v);
+            FontSizeManager.SetAppFontSize(v);
         }
         #endregion
         private void ShowOpenPackage_Click(object sender, RoutedEventArgs e)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using eAMDwizualizator.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,8 +14,7 @@ namespace eAMDwizualizator.Models
         public bool? CzyUkryty { get; set; }
         public bool? CzyFolder { get; set; }
         public string? Rozszerzenie { get; set; }
-        public bool? JestObrazem { get; set; }
-        public bool? JestVideo { get; set; }
+        public FileCategory Category { get; set; } = FileCategory.Unknown;
 
         public Plik(string sciezka, string tytul)
         {

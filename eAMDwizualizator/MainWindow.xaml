@@ -24,6 +24,13 @@
         <DataTemplate x:Key="FileItemTemplate">
             <TextBlock Text="{Binding Tytul}" TextTrimming="CharacterEllipsis" />
         </DataTemplate>
+        <!-- Szablon dla metadanych -->
+        <DataTemplate x:Key="MetadataItemTemplate">
+            <StackPanel Margin="4">
+                <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                <TextBlock Text="{Binding Value}" TextWrapping="Wrap" Margin="0,2,0,4"/>
+            </StackPanel>
+        </DataTemplate>
     </Window.Resources>
 
     <DockPanel>
@@ -139,15 +146,19 @@
                         <TabControl SelectedIndex="{Binding ActiveTabIndex, Mode=TwoWay}">
                             <TabItem Header="Wszystkie pliki">
                                 <ListView ItemsSource="{Binding PlikiWPaczce}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                          SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
+                                          SelectedItem="{Binding SelectedDocumentFile, Mode=TwoWay}"/>
                             </TabItem>
                             <TabItem Header="Dokumenty">
                                 <ListView ItemsSource="{Binding Dokumenty}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                          SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
+                                          SelectedItem="{Binding SelectedDocumentFile, Mode=TwoWay}"/>
                             </TabItem>
                             <TabItem Header="Sprawy">
                                 <ListView ItemsSource="{Binding Sprawy}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                          SelectedItem="{Binding SelectedPlik, Mode=TwoWay}"/>
+                                          SelectedItem="{Binding SelectedMetadataFile, Mode=TwoWay}"/>
+                            </TabItem>
+                            <TabItem Header="Metadane">
+                                <ListView ItemsSource="{Binding Metadane}" ItemTemplate="{StaticResource FileItemTemplate}"
+                                          SelectedItem="{Binding SelectedMetadataFile, Mode=TwoWay}"/>
                             </TabItem>
                         </TabControl>
                     </ScrollViewer>
@@ -195,7 +206,8 @@
 
                     <!-- Metadata  -->
                     <Border Grid.Column="2" Background="#FFE5E5E5" BorderThickness="1,0,0,0" BorderBrush="DimGray" Margin="0">
-                        <ListBox x:Name="Metadata_List" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" BorderThickness="0"  />
+                        <ListBox x:Name="Metadata_List" ItemsSource="{Binding SelectedMetadata}" ItemTemplate="{StaticResource MetadataItemTemplate}"
+         HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" BorderThickness="0"  />
                     </Border>
                 </Grid>
             </Border>
