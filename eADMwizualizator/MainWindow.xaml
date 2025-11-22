@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:eADMwizualizator"
         xmlns:viewModel="clr-namespace:eADMwizualizator.ViewModels"
         xmlns:helpers="clr-namespace:eADMwizualizator.Helpers"
+        xmlns:views="clr-namespace:eADMwizualizator.Views"
         mc:Ignorable="d"
         MinHeight="720" MinWidth="960" 
         WindowState="Maximized">
@@ -153,8 +154,7 @@
                                           SelectedItem="{Binding SelectedDocumentFile, Mode=TwoWay}"/>
                             </TabItem>
                             <TabItem Header="Sprawy">
-                                <ListView ItemsSource="{Binding Sprawy}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                          SelectedItem="{Binding SelectedMetadataFile, Mode=TwoWay}"/>
+                                <views:SprawyListView DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}" />
                             </TabItem>
                             <TabItem Header="Metadane">
                                 <ListView ItemsSource="{Binding Metadane}" ItemTemplate="{StaticResource FileItemTemplate}"

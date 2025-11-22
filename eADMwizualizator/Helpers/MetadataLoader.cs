@@ -77,9 +77,8 @@ namespace eADMwizualizator.Helpers
                 var tytul = fileName;
 
                 // Tworzymy obiekt Metadata z list¹ relacji 
-                var meta = new Metadata(id, path, tytul, data, dataOd, dataDo, kod)
+                var meta = new Metadata(path, tytul, data, dataOd, dataDo, kod)
                 {
-                    Id = id,
                     Sciezka = path,
                     Tytul = tytul,
                     Data = data,
