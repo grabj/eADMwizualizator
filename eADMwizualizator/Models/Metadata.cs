@@ -23,14 +23,21 @@ namespace eADMwizualizator.Models
         public string? Tematyka { get; set; }
         public string? Uprawnienia { get; set; }
 
-        // pełny konstruktor - zachowuje kompatybilność
-        public Metadata(string sciezka, string tytul, DateTime? data, DateTime? dataOd, DateTime? dataDo, string? grupowanie) : base(sciezka, tytul)
+        // konstruktor dla pliku Spraw
+        public Metadata(string sciezka, string tytul, DateTime? dataOd, DateTime? dataDo) : base(sciezka, tytul)
+        {
+            Sciezka = sciezka;
+            Tytul = tytul;
+            DataOd = dataOd;
+            DataDo = dataDo;
+        }
+
+        // konstruktor dla pliku Metadane
+        public Metadata(string sciezka, string tytul, DateTime? data, string? grupowanie) : base(sciezka, tytul)
         {
             Sciezka = sciezka;
             Tytul = tytul;
             Data = data;
-            DataOd = dataOd;
-            DataDo = dataDo;
             Grupowanie = grupowanie;
         }
 

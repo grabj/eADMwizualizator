@@ -55,6 +55,7 @@ namespace eADMwizualizator.ViewModels
         public ObservableCollection<Plik> Metadane { get; set; } = new ObservableCollection<Plik>();
         public ObservableCollection<Plik> PlikiWPaczce { get; set; } = new ObservableCollection<Plik>();
         public ObservableCollection<MetadataEntry> SelectedMetadata { get; } = new ObservableCollection<MetadataEntry>();
+        public ObservableCollection<SprawaNode> Nodes { get; } = new ObservableCollection<SprawaNode>();
 
         public ReadOnlyCollection<string>? tempFolderCollection;
 
@@ -425,6 +426,75 @@ namespace eADMwizualizator.ViewModels
 
         #endregion
 
+        public void BuildNodes()
+        {
+            Nodes.Clear();
+
+            // Tworzymy węzły spraw — klucz normalizowany (bez rozszerzenia, lower, trim)
+            foreach (var sprawa in Sprawy)
+            {
+                var fileName = Path.GetFileName(sprawa.Tytul ?? Path.GetFileName(sprawa.Sciezka) ?? string.Empty);
+                var fallbackKey = Path.GetFileNameWithoutExtension(fileName)?.Trim() ?? string.Empty;
+
+                // Jeśli plik sprawy został sparsowany do Metadata i ma Grupowanie — użyjemy tego (może zawierać ścieżkę/rozszerzenie)
+                string sprawaKeyRaw = null;
+                if (sprawa is Metadata ms && !string.IsNullOrWhiteSpace(ms.Grupowanie))
+                {
+                    sprawaKeyRaw = Path.GetFileName(ms.Grupowanie);
+                }
+
+                var sprawaKey = !string.IsNullOrWhiteSpace(sprawaKeyRaw)
+                    ? Path.GetFileNameWithoutExtension(sprawaKeyRaw).Trim()
+                    : fallbackKey;
+
+                Nodes.Add(new SprawaNode(sprawa, sprawaKey));
+            }
+
+            // Przypisanie dokumentów do węzłów — porównanie normalizowanych kluczy (bez rozszerzeń, lower)
+            foreach (var doc in Dokumenty)
+            {
+                var docFileName = Path.GetFileName(doc.Tytul ?? Path.GetFileName(doc.Sciezka) ?? string.Empty);
+                if (string.IsNullOrEmpty(docFileName)) continue;
+
+                var expectedMetaFileName = docFileName + ".xml";
+
+                var candidateMeta = Metadane.FirstOrDefault(m =>
+                    string.Equals(Path.GetFileName(m.Sciezka), expectedMetaFileName, System.StringComparison.OrdinalIgnoreCase))
+                    ?? PlikiWPaczce.FirstOrDefault(m =>
+                    string.Equals(Path.GetFileName(m.Sciezka), expectedMetaFileName, System.StringComparison.OrdinalIgnoreCase));
+
+                if (candidateMeta == null)
+                    continue;
+
+                // Pobierz wartość grupowania z obiektu Metadata (jeśli dostępne)
+                string grupRaw = null;
+                if (candidateMeta is Metadata m && !string.IsNullOrWhiteSpace(m.Grupowanie))
+                {
+                    grupRaw = m.Grupowanie;
+                }
+
+                if (string.IsNullOrWhiteSpace(grupRaw))
+                    continue;
+
+                var grupNormalized = Path.GetFileNameWithoutExtension(grupRaw).Trim().ToLowerInvariant();
+
+                // Szukamy węzła porównując z normalizowanym kluczem węzła
+                var targetNode = Nodes.FirstOrDefault(n =>
+                    string.Equals(Path.GetFileNameWithoutExtension(n.GrupowanieKey)?.Trim().ToLowerInvariant(), grupNormalized, System.StringComparison.OrdinalIgnoreCase));
+
+                if (targetNode != null)
+                {
+                    targetNode.Documents.Add(doc);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"BuildNodes: brak dopasowania dla dokumentu '{docFileName}' grup='{grupRaw}' (norm='{grupNormalized}'). CandidateMeta='{candidateMeta.Sciezka}'");
+                }
+            }
+
+            OnPropertyChanged(nameof(Nodes));
+        }
+
         #region BackgroundWorker - pobieranie listy plików
 
         private void BgGetFilesBackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -465,6 +535,7 @@ namespace eADMwizualizator.ViewModels
             }
 
             SciezkaAktywnejPaczki = file.Sciezka;
+
             OnPropertyChanged(nameof(SciezkaAktywnejPaczki));
         }
 
@@ -472,18 +543,59 @@ namespace eADMwizualizator.ViewModels
         {
             var filePath = e.UserState?.ToString() ?? string.Empty;
             var fileName = Path.GetFileName(filePath);
-            var plik = new Plik(filePath, fileName)
+
+            // Domyślny obiekt Plik
+            Plik plik = new Plik(filePath, fileName)
             {
                 CzyUkryty = IsFileHidden(filePath),
                 CzyFolder = IsDirectory(filePath),
                 Rozszerzenie = GetFileExtension(filePath)
             };
 
-            var ext = plik.Rozszerzenie ?? string.Empty;
-
             // określ kategorię przy pomocy jednej funkcji
             var category = PathHelpers.GetFileCategoryFromPath(filePath);
-            plik.Category = category;
+
+            // Jeśli plik to metadane — spróbuj sparsować go do obiektu Metadata (z pola Grupowanie)
+            if (category == FileCategory.Metadane)
+            {
+                try
+                {
+                    var meta = MetadataLoader.ParseMetadaneMetadata(filePath);
+                    if (meta != null)
+                    {
+                        // zachowaj atrybuty pliku i użyj obiektu Metadata zamiast zwykłego Plik
+                        meta.CzyUkryty = plik.CzyUkryty;
+                        meta.CzyFolder = plik.CzyFolder;
+                        meta.Rozszerzenie = plik.Rozszerzenie;
+                        meta.Category = FileCategory.Metadane;
+                        plik = meta;
+                    }
+                }
+                catch
+                {
+                    // w razie błędu zostanie użyty zwykły Plik (bez Grupowanie)
+                }
+            }
+            else if (category == FileCategory.Sprawy)
+            {
+                // opcjonalnie: parsuj pliki sprawy do Metadata, żeby mieć dodatkowe pola (DataOd/DataDo)
+                try
+                {
+                    var metaSprawa = MetadataLoader.ParseSprawaMetadata(filePath);
+                    if (metaSprawa != null)
+                    {
+                        metaSprawa.CzyUkryty = plik.CzyUkryty;
+                        metaSprawa.CzyFolder = plik.CzyFolder;
+                        metaSprawa.Rozszerzenie = plik.Rozszerzenie;
+                        metaSprawa.Category = FileCategory.Sprawy;
+                        plik = metaSprawa;
+                    }
+                }
+                catch
+                {
+                    // fallback do zwykłego Plik
+                }
+            }
 
             PlikiWPaczce.Add(plik);
             OnPropertyChanged(nameof(PlikiWPaczce));
@@ -497,7 +609,6 @@ namespace eADMwizualizator.ViewModels
                 case FileCategory.Sprawy:
                     Sprawy.Add(plik);
                     OnPropertyChanged(nameof(Sprawy));
-                    // dorobić drzewo z metadanymi i dokumentami
                     break;
                 case FileCategory.Metadane:
                     Metadane.Add(plik);
@@ -511,6 +622,10 @@ namespace eADMwizualizator.ViewModels
         private void BgGetFilesBackgroundWorker_RunWorkerCompleted(object? sender, RunWorkerCompletedEventArgs e)
         {
             // sortowanie, odświeżenie widoku
+
+
+            BuildNodes();
+
         }
 
         #endregion

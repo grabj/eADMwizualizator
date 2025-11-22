@@ -37,11 +37,8 @@ namespace eADMwizualizator.Helpers
         }
 
         // Parsuje plik z folderu "Sprawy" i tworzy obiekt Metadata z wybranymi polami:
-        // - grupowanie/kod -> Grupowanie
-        // - data/czas -> Data
         // - data/od -> DataOd
         // - data/do -> DataDo
-        // - relacja/.../wartoscId -> lista Relacje
         public static Metadata? ParseSprawaMetadata(string path)
         {
             if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
@@ -49,42 +46,99 @@ namespace eADMwizualizator.Helpers
             try
             {
                 var root = XElement.Load(path);
-
-                // XML Metadane
-                // grupowanie/kod
-                var kodEl = root.Descendants("grupowanie").Descendants("kod").FirstOrDefault()
-                            ?? root.Descendants("kod").FirstOrDefault();
-                var kod = kodEl?.Value?.Trim();
-
-                // data/czas
-                DateTime? data = null;
-                var czasEl = root.Descendants("data").Descendants("czas").FirstOrDefault()
-                              ?? root.Descendants("czas").FirstOrDefault();
-                if (czasEl != null && DateTime.TryParse(czasEl.Value.Trim(), out var dtC)) data = dtC;
+                var ns = root.Name.Namespace; // obs³uga domyœlnego namespace
 
                 // XML Sprawy
                 // data/od, data/do
                 DateTime? dataOd = null, dataDo = null;
-                var odEl = root.Descendants("data").Descendants("od").FirstOrDefault() ?? root.Descendants("od").FirstOrDefault();
-                var doEl = root.Descendants("data").Descendants("do").FirstOrDefault() ?? root.Descendants("do").FirstOrDefault();
+                var odEl = root.Descendants(ns + "data").Descendants(ns + "od").FirstOrDefault() ?? root.Descendants().FirstOrDefault(x => string.Equals(x.Name.LocalName, "od", StringComparison.OrdinalIgnoreCase));
+                var doEl = root.Descendants(ns + "data").Descendants(ns + "do").FirstOrDefault() ?? root.Descendants().FirstOrDefault(x => string.Equals(x.Name.LocalName, "do", StringComparison.OrdinalIgnoreCase));
                 if (odEl != null && DateTime.TryParse(odEl.Value.Trim(), out var dtOd)) dataOd = dtOd;
                 if (doEl != null && DateTime.TryParse(doEl.Value.Trim(), out var dtDo)) dataDo = dtDo;
 
-                
-
                 var fileName = Path.GetFileName(path) ?? path;
-                var id = fileName;
                 var tytul = fileName;
 
-                // Tworzymy obiekt Metadata z list¹ relacji 
-                var meta = new Metadata(path, tytul, data, dataOd, dataDo, kod)
+                // Tworzymy obiekt Metadata
+                var meta = new Metadata(path, tytul, dataOd, dataDo)
+                {
+                    Sciezka = path,
+                    Tytul = tytul,
+                    DataOd = dataOd,
+                    DataDo = dataDo,
+                };
+
+                return meta;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // Parsuje plik z folderu "Metadane" i tworzy obiekt Metadata z wybranymi polami:
+        // - sprawdza wszystkie elementy <grupowanie> i wewnêtrzne pola kod oraz kodGrupy
+        public static Metadata? ParseMetadaneMetadata(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+
+            try
+            {
+                var root = XElement.Load(path);
+                var ns = root.Name.Namespace; // obs³uga domyœlnego namespace
+
+                string? grupowanieValue = null;
+
+                // Pobierz wszystkie elementy <grupowanie> (najpierw z namespace, potem fallback po LocalName)
+                var grupowania = root.Descendants(ns + "grupowanie").ToList();
+                if (!grupowania.Any())
+                {
+                    grupowania = root.Descendants().Where(x => string.Equals(x.Name.LocalName, "grupowanie", StringComparison.OrdinalIgnoreCase)).ToList();
+                }
+
+                foreach (var g in grupowania)
+                {
+                    // Szukamy typowych pól wewn¹trz <grupowanie>: kod, kodGrupy
+                    XElement? candidate = null;
+
+                    // Najpierw próbujemy z namespace
+                    candidate = g.Element(ns + "kod") ?? g.Element(ns + "kodGrupy");
+
+                    // Jeœli nie znaleziono, próbujemy po LocalName (case-insensitive)
+                    if (candidate == null)
+                    {
+                        candidate = g.Elements().FirstOrDefault(e =>
+                            string.Equals(e.Name.LocalName, "kod", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(e.Name.LocalName, "kodGrupy", StringComparison.OrdinalIgnoreCase));
+                    }
+
+                    if (candidate != null)
+                    {
+                        var val = candidate.Value?.Trim();
+                        if (!string.IsNullOrWhiteSpace(val))
+                        {
+                            grupowanieValue = val;
+                            break;
+                        }
+                    }
+                }
+
+                // data/czas (bez dodatkowych heurystyk)
+                DateTime? data = null;
+                var czasEl = root.Descendants(ns + "data").Descendants(ns + "czas").FirstOrDefault()
+                              ?? root.Descendants().FirstOrDefault(x => string.Equals(x.Name.LocalName, "czas", StringComparison.OrdinalIgnoreCase));
+                if (czasEl != null && DateTime.TryParse(czasEl.Value.Trim(), out var dtC)) data = dtC;
+
+                var fileName = Path.GetFileName(path) ?? path;
+                var tytul = fileName;
+
+                // Tworzymy obiekt Metadata
+                var meta = new Metadata(path, tytul, data, grupowanieValue)
                 {
                     Sciezka = path,
                     Tytul = tytul,
                     Data = data,
-                    DataOd = dataOd,
-                    DataDo = dataDo,
-                    Grupowanie = kod,
+                    Grupowanie = grupowanieValue
                 };
 
                 return meta;

@@ -1,5 +1,6 @@
 ﻿using eADMwizualizator.ViewModels;
 using eADMwizualizator.Helpers;
+using eADMwizualizator.Models;
 using Microsoft.Win32;
 using System;
 using System.IO;
@@ -19,8 +20,8 @@ namespace eADMwizualizator
         {
             InitializeComponent();
             this.Title = Tytul;
-
         }
+
         private async void OtworzPaczke_Click(object sender, RoutedEventArgs e)
         {
             var picker = new OpenFileDialog {Filter = "Archive files (*.zip;*.tar)|*.zip;*.tar;|All files (*.*)|*.*"};
@@ -96,6 +97,24 @@ namespace eADMwizualizator
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
+        }
+
+        // Obsługa wyboru w drzewie spraw - korzysta z PlikViewModel jako pośrednika
+        private void SprawyTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            var selected = e.NewValue;
+            if (this.DataContext is not PlikViewModel mainVm) return;
+
+            // Jeżeli kliknięto dokument (Plik) — ustaw SelectedDocumentFile w ViewModel
+            if (selected is Plik doc)
+            {
+                mainVm.SelectedDocumentFile = doc;
+            }
+            // Jeżeli kliknięto węzeł sprawy — ustaw SelectedMetadataFile na odpowiadający plik sprawy (Sprawa)
+            else if (selected is SprawaNode node)
+            {
+                mainVm.SelectedMetadataFile = node.Sprawa;
+            }
         }
     }
 }

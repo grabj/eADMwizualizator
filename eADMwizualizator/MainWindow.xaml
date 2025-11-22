@@ -6,7 +6,6 @@
         xmlns:local="clr-namespace:eADMwizualizator"
         xmlns:viewModel="clr-namespace:eADMwizualizator.ViewModels"
         xmlns:helpers="clr-namespace:eADMwizualizator.Helpers"
-        xmlns:views="clr-namespace:eADMwizualizator.Views"
         mc:Ignorable="d"
         MinHeight="720" MinWidth="960" 
         WindowState="Maximized">
@@ -22,9 +21,21 @@
     </Window.Style>
 
     <Window.Resources>
+        <!-- zasoby -->
+        <!-- Zmieniono klucz z PlikTemplate na FileItemTemplate (używane przez ListView) -->
         <DataTemplate x:Key="FileItemTemplate">
             <TextBlock Text="{Binding Tytul}" TextTrimming="CharacterEllipsis" />
         </DataTemplate>
+
+        <HierarchicalDataTemplate x:Key="SprawaNodeTemplate" ItemsSource="{Binding Documents}"
+                                  ItemTemplate="{StaticResource FileItemTemplate}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                <TextBlock Text="  " />
+                <TextBlock Text="{Binding Documents.Count, StringFormat='({0})'}" Foreground="Gray"/>
+            </StackPanel>
+        </HierarchicalDataTemplate>
+
         <!-- Szablon dla metadanych -->
         <DataTemplate x:Key="MetadataItemTemplate">
             <StackPanel Margin="4">
@@ -154,7 +165,17 @@
                                           SelectedItem="{Binding SelectedDocumentFile, Mode=TwoWay}"/>
                             </TabItem>
                             <TabItem Header="Sprawy">
-                                <views:SprawyListView DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                <!-- wstawione bezpośrednio: drzewo spraw powiązane z PlikViewModel.Nodes -->
+                                <TreeView x:Name="SprawyTree"
+                                    ItemsSource="{Binding Nodes}"
+                                    ItemTemplate="{StaticResource SprawaNodeTemplate}"
+                                    SelectedItemChanged="SprawyTree_SelectedItemChanged" > 
+                                    <TreeView.ItemContainerStyle>
+                                        <Style TargetType="TreeViewItem">
+                                            <Setter Property="IsExpanded" Value="True"/>
+                                        </Style>
+                                    </TreeView.ItemContainerStyle>
+                                </TreeView>
                             </TabItem>
                             <TabItem Header="Metadane">
                                 <ListView ItemsSource="{Binding Metadane}" ItemTemplate="{StaticResource FileItemTemplate}"
@@ -176,24 +197,19 @@
                           ResizeDirection="Columns"
                           Cursor="SizeWE"/>
 
-            <!-- główny content - opakowany w Border -->
+            <!-- główny content -->
             <Border Grid.Column="2" x:Name="ContentBorder" BorderThickness="1" BorderBrush="DimGray" Background="Transparent" Margin="0">
                 <Grid x:Name="Content">
                     <Grid.ColumnDefinitions>
-                        <!-- dokument -->
                         <ColumnDefinition Width="2*"/>
-                        <!-- splitter wewnętrzny -->
                         <ColumnDefinition Width="5"/>
-                        <!-- metadata -->
                         <ColumnDefinition Width="1*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Wyświtlanie dokumentu -->
                     <Border Grid.Column="0" BorderBrush="DimGray" Background="#FFD8E8F7" BorderThickness="0,0,1,0"  Margin="0">
                         <ContentControl helpers:PdfContentControlExtensions.PdfSource="{Binding SelectedFilePath}"/>
                     </Border>
 
-                    <!-- splitter między Document a Metadata -->
                     <GridSplitter Grid.Column="1"
                                   Width="5"
                                   Background="#FFCCCCCC"
