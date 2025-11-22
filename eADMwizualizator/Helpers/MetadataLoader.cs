@@ -1,41 +1,112 @@
 using eADMwizualizator.Models;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 
 namespace eADMwizualizator.Helpers
 {
-    internal static class MetadataLoader
+    public static class MetadataLoader
     {
-        // Parsuje plik XML i zwraca kolekcjê wpisów metadanych.
-        // Rzuci wyj¹tek je¿eli za³adowanie XML siê nie powiedzie - caller powinien go obs³u¿yæ.
-        public static List<MetadataEntry> LoadMetadataEntries(string filePath)
+        // Zwraca listê prostych par nazwa/wartoœæ z pliku XML (u¿ywane przy wyœwietlaniu SelectedMetadata)
+        public static IEnumerable<MetadataEntry> LoadMetadataEntries(string path)
         {
-            var result = new List<MetadataEntry>();
+            var list = new List<MetadataEntry>();
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return list;
 
-            var xdoc = XDocument.Load(filePath);
-            var rootElem = xdoc.Root;
-            if (rootElem == null) return result;
-
-            foreach (var attr in rootElem.Attributes())
+            try
             {
-                result.Add(new MetadataEntry { Name = "@" + attr.Name.LocalName, Value = attr.Value });
-            }
+                var root = XElement.Load(path);
 
-            foreach (var elem in rootElem.Elements())
-            {
-                if (elem.HasElements)
+                // Pobieramy wszystkie liœciowe elementy (bez pod-elementów) i tworzymy pary "œcie¿ka/element" -> wartoœæ
+                var leaves = root.Descendants().Where(x => !x.HasElements);
+                foreach (var leaf in leaves)
                 {
-                    var children = string.Join("; ", elem.Elements().Select(e => $"{e.Name.LocalName}={e.Value}"));
-                    result.Add(new MetadataEntry { Name = elem.Name.LocalName, Value = children });
-                }
-                else
-                {
-                    result.Add(new MetadataEntry { Name = elem.Name.LocalName, Value = elem.Value });
+                    var name = BuildElementPath(leaf);
+                    var value = (leaf.Value ?? string.Empty).Trim();
+                    list.Add(new MetadataEntry { Name = name, Value = value });
                 }
             }
+            catch
+            {
+                // w razie b³êdu zwracamy pust¹ listê (wyœwietlenie b³êdu obs³u¿y wywo³uj¹cy)
+            }
 
-            return result;
+            return list;
+        }
+
+        // Parsuje plik z folderu "Sprawy" i tworzy obiekt Metadata z wybranymi polami:
+        // - grupowanie/kod -> Grupowanie
+        // - data/czas -> Data
+        // - data/od -> DataOd
+        // - data/do -> DataDo
+        // - relacja/.../wartoscId -> lista Relacje
+        public static Metadata? ParseSprawaMetadata(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+
+            try
+            {
+                var root = XElement.Load(path);
+
+                // XML Metadane
+                // grupowanie/kod
+                var kodEl = root.Descendants("grupowanie").Descendants("kod").FirstOrDefault()
+                            ?? root.Descendants("kod").FirstOrDefault();
+                var kod = kodEl?.Value?.Trim();
+
+                // data/czas
+                DateTime? data = null;
+                var czasEl = root.Descendants("data").Descendants("czas").FirstOrDefault()
+                              ?? root.Descendants("czas").FirstOrDefault();
+                if (czasEl != null && DateTime.TryParse(czasEl.Value.Trim(), out var dtC)) data = dtC;
+
+                // XML Sprawy
+                // data/od, data/do
+                DateTime? dataOd = null, dataDo = null;
+                var odEl = root.Descendants("data").Descendants("od").FirstOrDefault() ?? root.Descendants("od").FirstOrDefault();
+                var doEl = root.Descendants("data").Descendants("do").FirstOrDefault() ?? root.Descendants("do").FirstOrDefault();
+                if (odEl != null && DateTime.TryParse(odEl.Value.Trim(), out var dtOd)) dataOd = dtOd;
+                if (doEl != null && DateTime.TryParse(doEl.Value.Trim(), out var dtDo)) dataDo = dtDo;
+
+                
+
+                var fileName = Path.GetFileName(path) ?? path;
+                var id = fileName;
+                var tytul = fileName;
+
+                // Tworzymy obiekt Metadata z list¹ relacji 
+                var meta = new Metadata(id, path, tytul, data, dataOd, dataDo, kod)
+                {
+                    Id = id,
+                    Sciezka = path,
+                    Tytul = tytul,
+                    Data = data,
+                    DataOd = dataOd,
+                    DataDo = dataDo,
+                    Grupowanie = kod,
+                };
+
+                return meta;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // Helper: buduje "œcie¿kê" nazwy elementu (np. "grupowanie/kod")
+        private static string BuildElementPath(XElement el)
+        {
+            var parts = new Stack<string>();
+            var cur = el;
+            while (cur != null)
+            {
+                parts.Push(cur.Name.LocalName);
+                cur = cur.Parent;
+            }
+            return string.Join("/", parts);
         }
     }
 }

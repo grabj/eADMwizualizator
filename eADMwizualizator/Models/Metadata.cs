@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Data;
 
 namespace eADMwizualizator.Models
 {
-    class Metadata : Models.Plik
+    public class Metadata : Plik
     {
-        public string? Id { get; set; }
         public DateTime? Data { get; set; }
+        public DateTime? DataOd { get; set; }
+        public DateTime? DataDo { get; set; }
         public string? Format { get; set; }
         public string? Dostep { get; set; }
         public string? Typ { get; set; }
@@ -18,36 +16,27 @@ namespace eADMwizualizator.Models
         public string? Nadawca { get; set; }
         public string? Odbiorca { get; set; }
         public string? Relacja { get; set; }
+        public string? WartoscId { get; set; }
         public string? Klasyfikacja { get; set; }
         public string? Jezyk { get; set; }
         public string? Opis { get; set; }
         public string? Tematyka { get; set; }
         public string? Uprawnienia { get; set; }
 
-        public Metadata(string id, string sciezka, string tytul, DateTime? data, string? format, string? dostep, string? typ, string? grupowanie, string? tworca, string? nadawca, string? odbiorca, string? relacja, string? klasyfikacja, string? jezyk, string? opis, string? tematyka, string? uprawnienia) : base(sciezka, tytul)
+        // pełny konstruktor - zachowuje kompatybilność
+        public Metadata(string sciezka, string tytul, DateTime? data, DateTime? dataOd, DateTime? dataDo, string? grupowanie) : base(sciezka, tytul)
         {
-            Id = id;
             Sciezka = sciezka;
             Tytul = tytul;
             Data = data;
-            Format = format;
-            Dostep = dostep;
-            Typ = typ;
+            DataOd = dataOd;
+            DataDo = dataDo;
             Grupowanie = grupowanie;
-            Tworca = tworca;
-            Nadawca = nadawca;
-            Odbiorca = odbiorca;
-            Relacja = relacja;
-            Klasyfikacja = klasyfikacja;
-            Jezyk = jezyk;
-            Opis = opis;
-            Tematyka = tematyka;
-            Uprawnienia = uprawnienia;
         }
 
+        // prostszy konstruktor
         public Metadata(string sciezka, string tytul, string? id) : base(sciezka, tytul)
         {
-            Id = id;
             Sciezka = sciezka;
             Tytul = tytul;
         }
