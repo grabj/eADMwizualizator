@@ -3,12 +3,14 @@ using eADMwizualizator.Models;
 using eADMwizualizator.Helpers;
 using SharpCompress.Common;
 using SharpCompress.Readers;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -92,7 +94,7 @@ namespace eADMwizualizator.ViewModels
             get => _isOpenPackageVisible;
             set
             {
-                if (_isOpenPackageVisible == value) 
+                if (_isOpenPackageVisible == value)
                     return;
                 _isOpenPackageVisible = value;
                 OnPropertyChanged();
@@ -128,10 +130,15 @@ namespace eADMwizualizator.ViewModels
                 if (_selectedDocumentFile == value) return;
                 _selectedDocumentFile = value;
                 OnPropertyChanged();
+
                 // aktualizuj ścieżkę pliku do łatwego bindowania w widoku
                 SelectedFilePath = _selectedDocumentFile?.Sciezka;
 
-                    LoadSelectedDocumentFile();
+                // zaktualizuj wyświetlaną nazwę dokumentu (nagłówek lewy)
+                UpdateSelectedDocumentDisplayName();
+
+                // wczytaj powiązane metadane (i zaktualizuj nazwę metadanych jeśli znalezione)
+                LoadSelectedDocumentFile();
             }
         }
 
@@ -145,6 +152,9 @@ namespace eADMwizualizator.ViewModels
                 if (_selectedMetadataFile == value) return;
                 _selectedMetadataFile = value;
                 OnPropertyChanged();
+
+                // zaktualizuj wyświetlaną nazwę metadanych (nagłówek prawy)
+                UpdateSelectedMetadataDisplayName();
 
                 LoadSelectedMetadataFile();
             }
@@ -163,6 +173,32 @@ namespace eADMwizualizator.ViewModels
             }
         }
 
+        // Nowa właściwość — gotowy do bindowania tekst nagłówka (nazwa pliku z rozszerzeniem)
+        private string? _selectedDocumentDisplayName;
+        public string SelectedDocumentDisplayName
+        {
+            get => _selectedDocumentDisplayName ?? string.Empty;
+            private set
+            {
+                if (_selectedDocumentDisplayName == value) return;
+                _selectedDocumentDisplayName = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // Nowa właściwość — nazwa pliku metadanych (z rozszereniem)
+        private string? _selectedMetadataDisplayName;
+        public string SelectedMetadataDisplayName
+        {
+            get => _selectedMetadataDisplayName ?? string.Empty;
+            private set
+            {
+                if (_selectedMetadataDisplayName == value) return;
+                _selectedMetadataDisplayName = value;
+                OnPropertyChanged();
+            }
+        }
+
         #endregion
 
         #region Konstruktor
@@ -175,7 +211,6 @@ namespace eADMwizualizator.ViewModels
             // USTAWIANIE nazw widoków  
             ViewNames = new List<string>
             {
-                "Wszystkie pliki",
                 "Dokumenty",
                 "Sprawy",
                 "Metadane"
@@ -183,10 +218,10 @@ namespace eADMwizualizator.ViewModels
 
             _viewIndexes = ViewNames
                 .Select((name, idx) => new { name, idx })
-                .ToDictionary(x => x.name, x => x.idx, System.StringComparer.OrdinalIgnoreCase);
+                .ToDictionary(x => x.name, x => x.idx, StringComparer.OrdinalIgnoreCase);
 
             // USTAWIANIE domyślnego widoku
-            ActiveTabIndex = 1;
+            ActiveTabIndex = 0;
             SelectedViewName = ViewNames.ElementAtOrDefault(ActiveTabIndex);
 
             // polecenie wybierające widok
@@ -279,11 +314,17 @@ namespace eADMwizualizator.ViewModels
             SelectedMetadata.Clear();
 
             if (_selectedDocumentFile == null)
+            {
+                SelectedMetadataDisplayName = string.Empty;
                 return;
+            }
 
             var docFileName = Path.GetFileName(_selectedDocumentFile.Sciezka);
             if (string.IsNullOrEmpty(docFileName))
+            {
+                SelectedMetadataDisplayName = string.Empty;
                 return;
+            }
 
             var metadataFileName = docFileName + ".xml";
 
@@ -304,6 +345,9 @@ namespace eADMwizualizator.ViewModels
             {
                 candidatePath = PathHelpers.FindMetadataInPackage(PlikiWPaczce, metadataFileName);
             }
+
+            // ustaw nazwę pliku metadanych (jeśli znaleziono) — uaktualnia nagłówek bez convertera
+            SelectedMetadataDisplayName = string.IsNullOrEmpty(candidatePath) ? string.Empty : Path.GetFileName(candidatePath);
 
             if (string.IsNullOrEmpty(candidatePath) || !File.Exists(candidatePath))
             {
@@ -336,12 +380,16 @@ namespace eADMwizualizator.ViewModels
             SelectedDocumentFile = null;
 
             if (_selectedMetadataFile == null)
+            {
+                SelectedMetadataDisplayName = string.Empty;
                 return;
+            }
 
             var metaFilePath = _selectedMetadataFile.Sciezka;
             if (string.IsNullOrEmpty(metaFilePath) || !File.Exists(metaFilePath))
             {
                 SelectedMetadata.Add(new MetadataEntry { Name = "Info", Value = "Plik metadanych niedostępny." });
+                SelectedMetadataDisplayName = string.Empty;
                 return;
             }
 
@@ -358,6 +406,9 @@ namespace eADMwizualizator.ViewModels
             {
                 SelectedMetadata.Add(new MetadataEntry { Name = "Błąd", Value = ex.Message });
             }
+
+            // Ustaw nazwę metadanych w nagłówku
+            SelectedMetadataDisplayName = Path.GetFileName(metaFilePath);
 
             // Znajdź odpowiadający dokument — usuń tylko ostatnie ".xml"
             var metaFileName = Path.GetFileName(metaFilePath) ?? string.Empty;
@@ -459,9 +510,9 @@ namespace eADMwizualizator.ViewModels
                 var expectedMetaFileName = docFileName + ".xml";
 
                 var candidateMeta = Metadane.FirstOrDefault(m =>
-                    string.Equals(Path.GetFileName(m.Sciezka), expectedMetaFileName, System.StringComparison.OrdinalIgnoreCase))
+                    string.Equals(Path.GetFileName(m.Sciezka), expectedMetaFileName, StringComparison.OrdinalIgnoreCase))
                     ?? PlikiWPaczce.FirstOrDefault(m =>
-                    string.Equals(Path.GetFileName(m.Sciezka), expectedMetaFileName, System.StringComparison.OrdinalIgnoreCase));
+                    string.Equals(Path.GetFileName(m.Sciezka), expectedMetaFileName, StringComparison.OrdinalIgnoreCase));
 
                 if (candidateMeta == null)
                     continue;
@@ -480,7 +531,7 @@ namespace eADMwizualizator.ViewModels
 
                 // Szukamy węzła porównując z normalizowanym kluczem węzła
                 var targetNode = Nodes.FirstOrDefault(n =>
-                    string.Equals(Path.GetFileNameWithoutExtension(n.GrupowanieKey)?.Trim().ToLowerInvariant(), grupNormalized, System.StringComparison.OrdinalIgnoreCase));
+                    string.Equals(Path.GetFileNameWithoutExtension(n.GrupowanieKey)?.Trim().ToLowerInvariant(), grupNormalized, StringComparison.OrdinalIgnoreCase));
 
                 if (targetNode != null)
                 {
@@ -657,11 +708,77 @@ namespace eADMwizualizator.ViewModels
             try
             {
                 var ext = Path.GetExtension(fileName);
-                if (string.IsNullOrEmpty(ext)) 
+                if (string.IsNullOrEmpty(ext))
                     return null;
                 return ext.TrimStart('.').ToLowerInvariant();
             }
             catch { return null; }
+        }
+
+        // Ustawia SelectedDocumentDisplayName
+        private void UpdateSelectedDocumentDisplayName()
+        {
+            if (_selectedDocumentFile == null)
+            {
+                SelectedDocumentDisplayName = string.Empty;
+                return;
+            }
+
+            var tytul = _selectedDocumentFile.Tytul;
+            var sciezka = _selectedDocumentFile.Sciezka;
+
+            if (!string.IsNullOrWhiteSpace(tytul) && Path.HasExtension(tytul))
+            {
+                SelectedDocumentDisplayName = tytul!;
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(sciezka))
+            {
+                var fileName = Path.GetFileName(sciezka);
+                if (!string.IsNullOrEmpty(fileName))
+                {
+                    SelectedDocumentDisplayName = fileName;
+                    return;
+                }
+            }
+
+            SelectedDocumentDisplayName = tytul ?? string.Empty;
+        }
+
+        // Ustawia SelectedMetadataDisplayName
+        private void UpdateSelectedMetadataDisplayName()
+        {
+            if (_selectedMetadataFile == null)
+            {
+                SelectedMetadataDisplayName = string.Empty;
+                return;
+            }
+
+            var tytul = _selectedMetadataFile.Tytul;
+            var sciezka = _selected_metadata_filePath();
+            if (!string.IsNullOrWhiteSpace(tytul) && Path.HasExtension(tytul))
+            {
+                SelectedMetadataDisplayName = tytul!;
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(sciezka))
+            {
+                var fileName = Path.GetFileName(sciezka);
+                if (!string.IsNullOrEmpty(fileName))
+                {
+                    SelectedMetadataDisplayName = fileName;
+                    return;
+                }
+            }
+
+            SelectedMetadataDisplayName = tytul ?? string.Empty;
+        }
+
+        private string? _selected_metadata_filePath()
+        {
+            return _selectedMetadataFile?.Sciezka;
         }
 
         #endregion

@@ -22,7 +22,6 @@
 
     <Window.Resources>
         <!-- zasoby -->
-        <!-- Zmieniono klucz z PlikTemplate na FileItemTemplate (używane przez ListView) -->
         <DataTemplate x:Key="FileItemTemplate">
             <TextBlock Text="{Binding Tytul}" TextTrimming="CharacterEllipsis" />
         </DataTemplate>
@@ -47,7 +46,6 @@
 
     <DockPanel>
         <DockPanel DockPanel.Dock="Top" LastChildFill="True" Margin="0">
-            <!-- Suwak zadokowany po prawej -->
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">                
                 <TextBlock Text="Rozmiar czcionki" VerticalAlignment="Center" Margin="4,0" ToolTip="Ustaw rozmiar czcionki" />
                 <!-- Inicjalizacja opźniona, żeby pobrać wartość z Resource AppFontSize -->
@@ -155,16 +153,18 @@
 
                     <!-- Listy plików -->
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
-                        <TabControl SelectedIndex="{Binding ActiveTabIndex, Mode=TwoWay}">
-                            <TabItem Header="Wszystkie pliki">
-                                <ListView ItemsSource="{Binding PlikiWPaczce}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                          SelectedItem="{Binding SelectedDocumentFile, Mode=TwoWay}"/>
-                            </TabItem>
-                            <TabItem Header="Dokumenty">
+                        <TabControl SelectedIndex="{Binding ActiveTabIndex, Mode=TwoWay}" >
+                            <TabItem >
+                                <TabItem.Header>
+                                    <TextBlock Text="Dokumenty" FontWeight="SemiBold"/>
+                                </TabItem.Header>
                                 <ListView ItemsSource="{Binding Dokumenty}" ItemTemplate="{StaticResource FileItemTemplate}"
                                           SelectedItem="{Binding SelectedDocumentFile, Mode=TwoWay}"/>
                             </TabItem>
-                            <TabItem Header="Sprawy">
+                            <TabItem >
+                                <TabItem.Header>
+                                    <TextBlock Text="Sprawy" FontWeight="SemiBold"/>
+                                </TabItem.Header>
                                 <!-- wstawione bezpośrednio: drzewo spraw powiązane z PlikViewModel.Nodes -->
                                 <TreeView x:Name="SprawyTree"
                                     ItemsSource="{Binding Nodes}"
@@ -177,7 +177,7 @@
                                     </TreeView.ItemContainerStyle>
                                 </TreeView>
                             </TabItem>
-                            <TabItem Header="Metadane">
+                            <TabItem Header="Metadane" >
                                 <ListView ItemsSource="{Binding Metadane}" ItemTemplate="{StaticResource FileItemTemplate}"
                                           SelectedItem="{Binding SelectedMetadataFile, Mode=TwoWay}"/>
                             </TabItem>
@@ -200,17 +200,30 @@
             <!-- główny content -->
             <Border Grid.Column="2" x:Name="ContentBorder" BorderThickness="1" BorderBrush="DimGray" Background="Transparent" Margin="0">
                 <Grid x:Name="Content">
+                    <!-- teraz: wiersz 0 = zawartość, wiersz 1 = nagłówki poniżej -->
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="2*"/>
                         <ColumnDefinition Width="5"/>
                         <ColumnDefinition Width="1*"/>
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0" BorderBrush="DimGray" Background="#FFD8E8F7" BorderThickness="0,0,1,0"  Margin="0">
+                    <!-- dokument (góra) -->
+                    <Border Grid.Row="0" Grid.Column="0" BorderBrush="DimGray" Background="#FFD8E8F7" BorderThickness="0,0,1,0" Margin="0">
                         <ContentControl helpers:PdfContentControlExtensions.PdfSource="{Binding SelectedFilePath}"/>
                     </Border>
 
-                    <GridSplitter Grid.Column="1"
+                    <!-- Metadata (góra) -->
+                    <Border Grid.Row="0" Grid.Column="2" Background="#FFE5E5E5" BorderThickness="1,0,0,0" BorderBrush="DimGray" Margin="0">
+                        <ListBox x:Name="Metadata_List" ItemsSource="{Binding SelectedMetadata}" ItemTemplate="{StaticResource MetadataItemTemplate}"
+                                 HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" BorderThickness="0"  />
+                    </Border>
+
+                    <!-- pojedynczy splitter użyty dla obu wierszy -->
+                    <GridSplitter Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
                                   Width="5"
                                   Background="#FFCCCCCC"
                                   HorizontalAlignment="Center"
@@ -218,12 +231,26 @@
                                   ShowsPreview="True"
                                   ResizeBehavior="PreviousAndNext"
                                   ResizeDirection="Columns"
-                                  Cursor="SizeWE"/>
+                                  Cursor="SizeWE"
+                                  IsTabStop="False"
+                                  Panel.ZIndex="1"/>
 
-                    <!-- Metadata  -->
-                    <Border Grid.Column="2" Background="#FFE5E5E5" BorderThickness="1,0,0,0" BorderBrush="DimGray" Margin="0">
-                        <ListBox x:Name="Metadata_List" ItemsSource="{Binding SelectedMetadata}" ItemTemplate="{StaticResource MetadataItemTemplate}"
-         HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" BorderThickness="0"  />
+                    <!-- Nagłówki poniżej: dokument (dolny lewy) -->
+                    <Border Grid.Row="1" Grid.Column="0" BorderThickness="0,1,1,0" BorderBrush="Gray" 
+                            Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}" Padding="6,2,6,2">
+                        <TextBlock Text="{Binding SelectedDocumentDisplayName}" 
+                                   ToolTip="{Binding SelectedFilePath}"
+                                   TextTrimming="CharacterEllipsis" 
+                                   VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                    </Border>
+
+                    <!-- Nagłówki poniżej: metadata (dolny prawy) -->
+                    <Border Grid.Row="1" Grid.Column="2" BorderThickness="1,1,0,0" BorderBrush="Gray" 
+                            Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}" Padding="6,2,6,2">
+                        <TextBlock Text="{Binding SelectedMetadataDisplayName}" 
+                                   ToolTip="{Binding SelectedMetadataFile.Sciezka}"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="SemiBold"/>
                     </Border>
                 </Grid>
             </Border>
