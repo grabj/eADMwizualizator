@@ -6,6 +6,6 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <!-- globalny rozmiar czcionki aplikacji (DynamicResource) -->
-        <sys:Double x:Key="AppFontSize">13</sys:Double>
+        <sys:Double x:Key="AppFontSize">12</sys:Double>
     </Application.Resources>
 </Application>

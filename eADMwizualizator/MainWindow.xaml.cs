@@ -30,9 +30,6 @@ namespace eADMwizualizator
             var vm = (PlikViewModel)this.DataContext;
             if (vm == null) return;
 
-            // rekursywne pokazywanie plików
-            vm.CzyRekursywnie = true; 
-
             try
             {
                 await vm.LoadDirectoryFromArchiveAsync(picker.FileName);

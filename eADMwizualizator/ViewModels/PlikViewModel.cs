@@ -1,30 +1,23 @@
 ﻿using eADMwizualizator.Commands;
-using eADMwizualizator.Models;
 using eADMwizualizator.Helpers;
-using SharpCompress.Common;
+using eADMwizualizator.Models;
 using SharpCompress.Readers;
+using SharpCompress.Common;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Xml.Linq;
 
 namespace eADMwizualizator.ViewModels
 {
-    public class PlikViewModel : INotifyPropertyChanged
+    public class PlikViewModel : BaseViewModel
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        private CancellationTokenSource? _scanCts;
 
         #region Właściwości
 
@@ -32,171 +25,106 @@ namespace eADMwizualizator.ViewModels
         public string? SciezkaAktywnejPaczki
         {
             get => _sciezkaAktywnejPaczki;
-            private set
-            {
-                if (_sciezkaAktywnejPaczki == value) return;
-                _sciezkaAktywnejPaczki = value;
-                OnPropertyChanged();
-            }
+            private set => SetProperty(ref _sciezkaAktywnejPaczki, value);
         }
 
-        // Gdy true, folder będzie przeglądany rekursywnie
-        private bool _czyRekursywnie = true;
-        public bool CzyRekursywnie
-        {
-            get => _czyRekursywnie;
-            set
-            {
-                if (_czyRekursywnie == value) return;
-                _czyRekursywnie = value;
-                OnPropertyChanged();
-            }
-        }
-        public ObservableCollection<Plik> Dokumenty { get; set; } = new ObservableCollection<Plik>();
-        public ObservableCollection<Plik> Sprawy { get; set; } = new ObservableCollection<Plik>();
-        public ObservableCollection<Plik> Metadane { get; set; } = new ObservableCollection<Plik>();
-        public ObservableCollection<Plik> PlikiWPaczce { get; set; } = new ObservableCollection<Plik>();
+        public ObservableCollection<Plik> Dokumenty { get; } = new ObservableCollection<Plik>();
+        public ObservableCollection<Plik> Sprawy { get; } = new ObservableCollection<Plik>();
+        public ObservableCollection<Plik> Metadane { get; } = new ObservableCollection<Plik>();
+        public ObservableCollection<Plik> PlikiWPaczce { get; } = new ObservableCollection<Plik>();
         public ObservableCollection<MetadataEntry> SelectedMetadata { get; } = new ObservableCollection<MetadataEntry>();
         public ObservableCollection<SprawaNode> Nodes { get; } = new ObservableCollection<SprawaNode>();
 
         public ReadOnlyCollection<string>? tempFolderCollection;
 
-        private readonly BackgroundWorker bgGetFilesBackgroundWorker = new BackgroundWorker()
-        {
-            WorkerReportsProgress = true,
-            WorkerSupportsCancellation = true
-        };
-
         internal static readonly List<string> PaczkaEadmRozszerzenia = new List<string> { "tar", "zip" };
 
-        // przełączanie widoku
+        // widoki
         public ICommand SelectViewCommand { get; private set; }
         private int _activeTabIndex;
         public int ActiveTabIndex
         {
             get => _activeTabIndex;
-            set { if (_activeTabIndex == value) return; _activeTabIndex = value; OnPropertyChanged(); }
+            set => SetProperty(ref _activeTabIndex, value);
         }
         private string? _selectedViewName;
         public string? SelectedViewName
         {
             get => _selectedViewName;
-            set { if (_selectedViewName == value) return; _selectedViewName = value; OnPropertyChanged(); }
+            set => SetProperty(ref _selectedViewName, value);
         }
-        // nazwy widoków przypisane w konstruktorze i mapowanie na indeksy
-        public IReadOnlyList<string> ViewNames { get; private set; }
-        private readonly Dictionary<string, int> _viewIndexes;
+        public IReadOnlyList<string>? ViewNames { get; private set; }
+        private Dictionary<string, int>? _viewIndexes;
 
-        // Widoczność górnego panelu (StackPanel Grid.Row="0")
         private bool _isOpenPackageVisible = true;
         public bool IsOpenPackageVisible
         {
             get => _isOpenPackageVisible;
-            set
-            {
-                if (_isOpenPackageVisible == value)
-                    return;
-                _isOpenPackageVisible = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _isOpenPackageVisible, value);
         }
-        // panel "Otwórz paczkę" nie będzie automatycznie zamykany po otwarciu paczki
-        private bool _nieZamykajPaneluOtworzPaczke = false;
+
+        private bool _nieZamykajPaneluOtworzPaczke;
         public bool NieZamykajPaneluOtworzPaczke
         {
             get => _nieZamykajPaneluOtworzPaczke;
             set
             {
-                if (_nieZamykajPaneluOtworzPaczke == value) return;
-                _nieZamykajPaneluOtworzPaczke = value;
-                OnPropertyChanged();
-
-                // Jeśli użytkownik zaznaczy opcję — upewnij się że panel jest widoczny.
-                // Jeśli opcja zostanie odznaczona — nie zamykaj).
-                if (_nieZamykajPaneluOtworzPaczke)
+                if (SetProperty(ref _nieZamykajPaneluOtworzPaczke, value) && value)
                 {
                     IsOpenPackageVisible = true;
                 }
             }
         }
 
-        // Właściwości do przeglądania dokumentu
         private Plik? _selectedDocumentFile;
         public Plik? SelectedDocumentFile
         {
             get => _selectedDocumentFile;
             set
             {
-                if (_selectedDocumentFile == value) return;
-                _selectedDocumentFile = value;
-                OnPropertyChanged();
-
-                // aktualizuj ścieżkę pliku do łatwego bindowania w widoku
-                SelectedFilePath = _selectedDocumentFile?.Sciezka;
-
-                // zaktualizuj wyświetlaną nazwę dokumentu (nagłówek lewy)
-                UpdateSelectedDocumentDisplayName();
-
-                // wczytaj powiązane metadane (i zaktualizuj nazwę metadanych jeśli znalezione)
-                LoadSelectedDocumentFile();
+                if (SetProperty(ref _selectedDocumentFile, value))
+                {
+                    SelectedFilePath = _selectedDocumentFile?.Sciezka;
+                    UpdateSelectedDocumentDisplayName();
+                    // wczytanie metadanych asynchronicznie (jeżeli kosztowne)
+                    LoadSelectedDocumentFile();
+                }
             }
         }
 
         private Plik? _selectedMetadataFile;
-        // Gdy użytkownik wybierze plik z folderu metadane — wczytaj go do SelectedMetadata oraz ustaw odpowiadający dokument po lewej (bez końcowego .xml).
         public Plik? SelectedMetadataFile
         {
             get => _selectedMetadataFile;
             set
             {
-                if (_selectedMetadataFile == value) return;
-                _selectedMetadataFile = value;
-                OnPropertyChanged();
-
-                // zaktualizuj wyświetlaną nazwę metadanych (nagłówek prawy)
-                UpdateSelectedMetadataDisplayName();
-
-                LoadSelectedMetadataFile();
+                if (SetProperty(ref _selectedMetadataFile, value))
+                {
+                    UpdateSelectedMetadataDisplayName();
+                    LoadSelectedMetadataFile();
+                }
             }
         }
 
         private string? _selectedFilePath;
-        // To będzie związywane z przyczepną własnością w widoku (DocumentViewer)
         public string? SelectedFilePath
         {
             get => _selectedFilePath;
-            private set
-            {
-                if (_selectedFilePath == value) return;
-                _selectedFilePath = value;
-                OnPropertyChanged();
-            }
+            private set => SetProperty(ref _selectedFilePath, value);
         }
 
-        // Nowa właściwość — gotowy do bindowania tekst nagłówka (nazwa pliku z rozszerzeniem)
         private string? _selectedDocumentDisplayName;
         public string SelectedDocumentDisplayName
         {
             get => _selectedDocumentDisplayName ?? string.Empty;
-            private set
-            {
-                if (_selectedDocumentDisplayName == value) return;
-                _selectedDocumentDisplayName = value;
-                OnPropertyChanged();
-            }
+            private set => SetProperty(ref _selectedDocumentDisplayName, value);
         }
 
-        // Nowa właściwość — nazwa pliku metadanych (z rozszereniem)
         private string? _selectedMetadataDisplayName;
         public string SelectedMetadataDisplayName
         {
             get => _selectedMetadataDisplayName ?? string.Empty;
-            private set
-            {
-                if (_selectedMetadataDisplayName == value) return;
-                _selectedMetadataDisplayName = value;
-                OnPropertyChanged();
-            }
+            private set => SetProperty(ref _selectedMetadataDisplayName, value);
         }
 
         #endregion
@@ -205,40 +133,23 @@ namespace eADMwizualizator.ViewModels
 
         public PlikViewModel()
         {
-            // Domyślna lokalizacja
             SciezkaAktywnejPaczki = @".\temp";
 
-            // USTAWIANIE nazw widoków  
-            ViewNames = new List<string>
-            {
-                "Dokumenty",
-                "Sprawy",
-                "Metadane"
-            }.AsReadOnly();
+            ViewNames = new List<string> { "Dokumenty", "Sprawy", "Metadane" }.AsReadOnly();
+            _viewIndexes = ViewNames.Select((n, i) => new { n, i })
+                                    .ToDictionary(x => x.n, x => x.i, StringComparer.OrdinalIgnoreCase);
 
-            _viewIndexes = ViewNames
-                .Select((name, idx) => new { name, idx })
-                .ToDictionary(x => x.name, x => x.idx, StringComparer.OrdinalIgnoreCase);
-
-            // USTAWIANIE domyślnego widoku
             ActiveTabIndex = 0;
             SelectedViewName = ViewNames.ElementAtOrDefault(ActiveTabIndex);
 
-            // polecenie wybierające widok
             SelectViewCommand = new RelayCommand(param => SelectView(param));
-
-            // listowanie plików
-            bgGetFilesBackgroundWorker.DoWork += BgGetFilesBackgroundWorker_DoWork;
-            bgGetFilesBackgroundWorker.ProgressChanged += BgGetFilesBackgroundWorker_ProgressChanged;
-            bgGetFilesBackgroundWorker.RunWorkerCompleted += BgGetFilesBackgroundWorker_RunWorkerCompleted;
         }
 
         #endregion
 
-        #region Metody publiczne do pracy z paczką
+        #region Ładowanie paczki
 
-        // rozpakowuje archiwum do ./temp, ustawia SciezkaAktywnejPaczki i wywołuje LoadDirectory.
-        public async Task LoadDirectoryFromArchiveAsync(string archivePath)
+        public async Task LoadDirectoryFromArchiveAsync(string archivePath, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(archivePath))
                 throw new ArgumentNullException(nameof(archivePath));
@@ -247,68 +158,212 @@ namespace eADMwizualizator.ViewModels
             if (!PaczkaEadmRozszerzenia.Contains(ext))
                 throw new NotSupportedException("Nieobsługiwany format pliku.");
 
-            // stworzenie unikalnego katalogu dla tej sesji/uruchomienia
             string targetDir = Helpers.TempDirectoryManager.CreateRunTempDir();
 
+            // ekstrakcję wykonujemy w tle, propagujemy cancellation
             await Task.Run(() =>
             {
-                // otwieramy archiwum z FileShare.Read, żeby nie blokować innych odczytów
-                using (Stream fileStream = File.Open(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                using (var reader = ReaderFactory.Open(fileStream))
+                using Stream fileStream = File.Open(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var reader = ReaderFactory.Open(fileStream);
+                while (reader.MoveToNextEntry())
                 {
-                    while (reader.MoveToNextEntry())
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!reader.Entry.IsDirectory)
                     {
-                        if (!reader.Entry.IsDirectory)
+                        var attempts = 3;
+                        for (int i = 0; i < attempts; i++)
                         {
-                            // retry per plik
-                            var attempts = 3;
-                            for (int i = 0; i < attempts; i++)
+                            try
                             {
-                                try
-                                {
-                                    reader.WriteEntryToDirectory(targetDir, new ExtractionOptions
-                                    {
-                                        ExtractFullPath = true,
-                                        Overwrite = true
-                                    });
-                                    break;
-                                }
-                                catch (IOException)
-                                {
-                                    if (i == attempts - 1) throw;
-                                    Thread.Sleep(200);
-                                }
+                                reader.WriteEntryToDirectory(targetDir, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
+                                break;
+                            }
+                            catch (IOException)
+                            {
+                                if (i == attempts - 1) throw;
+                                Task.Delay(200, cancellationToken).Wait(cancellationToken);
                             }
                         }
                     }
                 }
-            });
+            }, cancellationToken);
 
-            // Po rozpakowaniu wczytaj rozpakowany katalog
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                LoadDirectory(new Plik(targetDir, Path.GetFileName(targetDir)));
-            });
+            // po rozpakowaniu — załaduj katalog
+            await LoadDirectoryAsync(new Plik(targetDir, Path.GetFileName(targetDir)));
         }
 
-        // Wczytywanie dowolnego istniejącego folderu do wyświetlenia w nawigacji
-        public void LoadDirectory(Plik paczka)
+        // Aby zachować kompatybilność, udostępniamy obie metody:
+        public void LoadDirectory(Plik paczka) => _ = LoadDirectoryAsync(paczka);
+
+        public async Task LoadDirectoryAsync(Plik paczka)
         {
-            PlikiWPaczce.Clear();
-            Dokumenty.Clear();
-            Sprawy.Clear();
-            Metadane.Clear();
-            SelectedMetadata.Clear();
+            // anuluj poprzednie skanowanie
+            _scanCts?.Cancel();
+            _scanCts?.Dispose();
+            _scanCts = new CancellationTokenSource();
+
+            // wyczyść stare zbiory (warstwa UI zaktualizuje się automatycznie)
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                PlikiWPaczce.Clear();
+                Dokumenty.Clear();
+                Sprawy.Clear();
+                Metadane.Clear();
+                SelectedMetadata.Clear();
+                Nodes.Clear();
+            });
 
             tempFolderCollection = null;
 
-            if (bgGetFilesBackgroundWorker.IsBusy)
-                bgGetFilesBackgroundWorker.CancelAsync();
+            try
+            {
+                var entries = await Task.Run(() => EnumerateEntriesSafe(paczka.Sciezka, _scanCts.Token), _scanCts.Token);
+                tempFolderCollection = new ReadOnlyCollection<string>(entries);
 
-            bgGetFilesBackgroundWorker.RunWorkerAsync(paczka);
+                // dodawaj elementy stopniowo na wątku UI
+                foreach (var entry in tempFolderCollection)
+                {
+                    _scanCts.Token.ThrowIfCancellationRequested();
+                    AddEntryToCollections(entry);
+                }
+
+                SciezkaAktywnejPaczki = paczka.Sciezka;
+                BuildNodes();
+            }
+            catch (OperationCanceledException)
+            {
+                // anulowano skanowanie — nic więcej nie robimy
+            }
+            catch (Exception ex)
+            {
+                // logging: w prawdziwym projekcie wyrzuć do loggera
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    SelectedMetadata.Clear();
+                    SelectedMetadata.Add(new MetadataEntry { Name = "Błąd skanowania", Value = ex.Message });
+                });
+            }
+            finally
+            {
+                // czyszczenie tokenu zostawiamy do następnego uruchomienia
+            }
         }
 
-        // Wczytuje plik metadanych odpowiadający aktualnie wybranemu dokumentowi.
+        private static List<string> EnumerateEntriesSafe(string root, CancellationToken token)
+        {
+            var result = new List<string>();
+            try
+            {
+                if (!Directory.Exists(root)) return result;
+
+                // Dodaj pliki znajdujące się bezpośrednio w root
+                foreach (var f in Directory.GetFiles(root))
+                {
+                    token.ThrowIfCancellationRequested();
+                    result.Add(f);
+                }
+
+                // Dla każdego pierwszego poziomu katalogu dodaj pliki w tym katalogu (nie rekursywnie)
+                foreach (var d in Directory.GetDirectories(root))
+                {
+                    token.ThrowIfCancellationRequested();
+                    try
+                    {
+                        foreach (var f in Directory.GetFiles(d))
+                        {
+                            token.ThrowIfCancellationRequested();
+                            result.Add(f);
+                        }
+                    }
+                    catch
+                    {
+                        // ignorujemy błędy odczytu pojedynczego katalogu
+                    }
+                }
+            }
+            catch
+            {
+                // ignorujemy błędy odczytu katalogów ale w docelowym kodzie loguj
+            }
+            return result;
+        }
+
+        private void AddEntryToCollections(string filePath)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                var fileName = Path.GetFileName(filePath);
+                var plik = new Plik(filePath, fileName)
+                {
+                    CzyUkryty = IsFileHidden(filePath),
+                    CzyFolder = IsDirectory(filePath),
+                    Rozszerzenie = GetFileExtension(filePath)
+                };
+
+                var category = PathHelpers.GetFileCategoryFromPath(filePath);
+
+                if (category == FileCategory.Metadane)
+                {
+                    try
+                    {
+                        var meta = MetadataLoader.ParseMetadaneMetadata(filePath);
+                        if (meta != null)
+                        {
+                            meta.CzyUkryty = plik.CzyUkryty;
+                            meta.CzyFolder = plik.CzyFolder;
+                            meta.Rozszerzenie = plik.Rozszerzenie;
+                            meta.Category = FileCategory.Metadane;
+                            plik = meta;
+                        }
+                    }
+                    catch
+                    {
+                        // parse error -> użyj zwykłego Plik; wprowadź logowanie w przyszłości
+                    }
+                }
+                else if (category == FileCategory.Sprawy)
+                {
+                    try
+                    {
+                        var metaSprawa = MetadataLoader.ParseSprawaMetadata(filePath);
+                        if (metaSprawa != null)
+                        {
+                            metaSprawa.CzyUkryty = plik.CzyUkryty;
+                            metaSprawa.CzyFolder = plik.CzyFolder;
+                            metaSprawa.Rozszerzenie = plik.Rozszerzenie;
+                            metaSprawa.Category = FileCategory.Sprawy;
+                            plik = metaSprawa;
+                        }
+                    }
+                    catch
+                    {
+                        // ignore parse error
+                    }
+                }
+
+                PlikiWPaczce.Add(plik);
+
+                switch (category)
+                {
+                    case FileCategory.Dokumenty:
+                        Dokumenty.Add(plik);
+                        break;
+                    case FileCategory.Sprawy:
+                        Sprawy.Add(plik);
+                        break;
+                    case FileCategory.Metadane:
+                        Metadane.Add(plik);
+                        break;
+                    default:
+                        break;
+                }
+            });
+        }
+
+        #endregion
+
+        #region Metadane
+
         private void LoadSelectedDocumentFile()
         {
             SelectedMetadata.Clear();
@@ -328,25 +383,18 @@ namespace eADMwizualizator.ViewModels
 
             var metadataFileName = docFileName + ".xml";
 
-            // Najpierw spróbuj bezpośrednio w folderze {SciezkaAktywnejPaczki}\metadane
-            string? root = SciezkaAktywnejPaczki;
             string? candidatePath = null;
-            if (!string.IsNullOrEmpty(root))
+            if (!string.IsNullOrEmpty(SciezkaAktywnejPaczki))
             {
-                var direct = Path.Combine(root, PathHelpers.GetFolderName(FileCategory.Metadane), metadataFileName);
-                if (File.Exists(direct))
-                {
-                    candidatePath = direct;
-                }
+                var direct = Path.Combine(SciezkaAktywnejPaczki, PathHelpers.GetFolderName(FileCategory.Metadane), metadataFileName);
+                if (File.Exists(direct)) candidatePath = direct;
             }
 
-            // fallback: szukaj w liście PlikiWPaczce
             if (candidatePath == null)
             {
                 candidatePath = PathHelpers.FindMetadataInPackage(PlikiWPaczce, metadataFileName);
             }
 
-            // ustaw nazwę pliku metadanych (jeśli znaleziono) — uaktualnia nagłówek bez convertera
             SelectedMetadataDisplayName = string.IsNullOrEmpty(candidatePath) ? string.Empty : Path.GetFileName(candidatePath);
 
             if (string.IsNullOrEmpty(candidatePath) || !File.Exists(candidatePath))
@@ -358,22 +406,14 @@ namespace eADMwizualizator.ViewModels
             try
             {
                 var entries = MetadataLoader.LoadMetadataEntries(candidatePath);
-                foreach (var e in entries)
-                {
-                    SelectedMetadata.Add(e);
-                }
+                foreach (var e in entries) SelectedMetadata.Add(e);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 SelectedMetadata.Add(new MetadataEntry { Name = "Błąd", Value = ex.Message });
             }
-
-            OnPropertyChanged(nameof(SelectedMetadata));
         }
 
-        // Wczytuje plik metadanych wybrany w kolekcji Metadane.
-        // Ustawia SelectedMetadata (prawe okno) oraz próbuje znaleźć odpowiadający dokument
-        // (ta sama nazwa bez końcowego ".xml") i ustawić go jako SelectedPlik / SelectedFilePath (lewe okno).
         private void LoadSelectedMetadataFile()
         {
             SelectedMetadata.Clear();
@@ -393,33 +433,25 @@ namespace eADMwizualizator.ViewModels
                 return;
             }
 
-            // Parsowanie XML metadanych
             try
             {
                 var entries = MetadataLoader.LoadMetadataEntries(metaFilePath);
-                foreach (var e in entries)
-                {
-                    SelectedMetadata.Add(e);
-                }
+                foreach (var e in entries) SelectedMetadata.Add(e);
             }
             catch (Exception ex)
             {
                 SelectedMetadata.Add(new MetadataEntry { Name = "Błąd", Value = ex.Message });
             }
 
-            // Ustaw nazwę metadanych w nagłówku
             SelectedMetadataDisplayName = Path.GetFileName(metaFilePath);
 
-            // Znajdź odpowiadający dokument — usuń tylko ostatnie ".xml"
             var metaFileName = Path.GetFileName(metaFilePath) ?? string.Empty;
             var docFileName = metaFileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)
                 ? metaFileName.Substring(0, metaFileName.Length - 4)
                 : metaFileName;
 
-            // Spróbuj znaleźć w liście plików paczki
             var foundDoc = PathHelpers.FindDocumentInPackage(PlikiWPaczce, docFileName);
 
-            // Jeżeli nie znaleziono, spróbuj w {SciezkaAktywnejPaczki}\dokumenty\docFileName
             if (foundDoc == null && !string.IsNullOrEmpty(SciezkaAktywnejPaczki))
             {
                 var candidate = Path.Combine(SciezkaAktywnejPaczki, "dokumenty", docFileName);
@@ -437,58 +469,29 @@ namespace eADMwizualizator.ViewModels
 
             if (foundDoc != null)
             {
-                try
-                {
-                    SelectedDocumentFile = foundDoc;
-                    SelectedFilePath = foundDoc.Sciezka;
-                }
-                finally
-                {
-                }
+                SelectedDocumentFile = foundDoc;
+                SelectedFilePath = foundDoc.Sciezka;
             }
             else
             {
                 SelectedMetadata.Add(new MetadataEntry { Name = "Info", Value = $"Nie znaleziono dokumentu: {docFileName}" });
             }
-
-            OnPropertyChanged(nameof(SelectedMetadata));
-        }
-
-        private void SelectView(object? parameter)
-        {
-            string? name = null;
-            if (parameter is SubMenu s) name = s.Name;
-            if (string.IsNullOrWhiteSpace(name)) return;
-
-            name = name.Trim();
-            SelectedViewName = name;
-
-            if (_viewIndexes.TryGetValue(name, out var index))
-            {
-                ActiveTabIndex = index;
-            }
-            else
-            {
-                // fallback na domyślny widok
-                ActiveTabIndex = 1;
-                SelectedViewName = ViewNames.ElementAtOrDefault(ActiveTabIndex);
-            }
         }
 
         #endregion
+
+        #region Sprawy
 
         public void BuildNodes()
         {
             Nodes.Clear();
 
-            // Tworzymy węzły spraw — klucz normalizowany (bez rozszerzenia, lower, trim)
             foreach (var sprawa in Sprawy)
             {
                 var fileName = Path.GetFileName(sprawa.Tytul ?? Path.GetFileName(sprawa.Sciezka) ?? string.Empty);
                 var fallbackKey = Path.GetFileNameWithoutExtension(fileName)?.Trim() ?? string.Empty;
 
-                // Jeśli plik sprawy został sparsowany do Metadata i ma Grupowanie — użyjemy tego (może zawierać ścieżkę/rozszerzenie)
-                string sprawaKeyRaw = null;
+                string? sprawaKeyRaw = null;
                 if (sprawa is Metadata ms && !string.IsNullOrWhiteSpace(ms.Grupowanie))
                 {
                     sprawaKeyRaw = Path.GetFileName(ms.Grupowanie);
@@ -501,7 +504,6 @@ namespace eADMwizualizator.ViewModels
                 Nodes.Add(new SprawaNode(sprawa, sprawaKey));
             }
 
-            // Przypisanie dokumentów do węzłów — porównanie normalizowanych kluczy (bez rozszerzeń, lower)
             foreach (var doc in Dokumenty)
             {
                 var docFileName = Path.GetFileName(doc.Tytul ?? Path.GetFileName(doc.Sciezka) ?? string.Empty);
@@ -514,169 +516,19 @@ namespace eADMwizualizator.ViewModels
                     ?? PlikiWPaczce.FirstOrDefault(m =>
                     string.Equals(Path.GetFileName(m.Sciezka), expectedMetaFileName, StringComparison.OrdinalIgnoreCase));
 
-                if (candidateMeta == null)
-                    continue;
+                if (candidateMeta == null) continue;
 
-                // Pobierz wartość grupowania z obiektu Metadata (jeśli dostępne)
-                string grupRaw = null;
-                if (candidateMeta is Metadata m && !string.IsNullOrWhiteSpace(m.Grupowanie))
-                {
-                    grupRaw = m.Grupowanie;
-                }
-
-                if (string.IsNullOrWhiteSpace(grupRaw))
-                    continue;
+                string? grupRaw = null;
+                if (candidateMeta is Metadata m && !string.IsNullOrWhiteSpace(m.Grupowanie)) grupRaw = m.Grupowanie;
+                if (string.IsNullOrWhiteSpace(grupRaw)) continue;
 
                 var grupNormalized = Path.GetFileNameWithoutExtension(grupRaw).Trim().ToLowerInvariant();
 
-                // Szukamy węzła porównując z normalizowanym kluczem węzła
                 var targetNode = Nodes.FirstOrDefault(n =>
                     string.Equals(Path.GetFileNameWithoutExtension(n.GrupowanieKey)?.Trim().ToLowerInvariant(), grupNormalized, StringComparison.OrdinalIgnoreCase));
 
-                if (targetNode != null)
-                {
-                    targetNode.Documents.Add(doc);
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"BuildNodes: brak dopasowania dla dokumentu '{docFileName}' grup='{grupRaw}' (norm='{grupNormalized}'). CandidateMeta='{candidateMeta.Sciezka}'");
-                }
+                if (targetNode != null) targetNode.Documents.Add(doc);
             }
-
-            OnPropertyChanged(nameof(Nodes));
-        }
-
-        #region BackgroundWorker - pobieranie listy plików
-
-        private void BgGetFilesBackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            var file = e.Argument as Plik;
-            if (file == null) return;
-
-            List<string> entries = new List<string>();
-            try
-            {
-                if (Directory.Exists(file.Sciezka))
-                {
-                    if (CzyRekursywnie)
-                    {
-                        // Rekursywne przeglądanie (pliki i katalogi)
-                        entries.AddRange(Directory.EnumerateFileSystemEntries(file.Sciezka, "*", SearchOption.AllDirectories));
-                    }
-                    else
-                    {
-                        // Tylko pierwszy poziom
-                        entries.AddRange(Directory.GetDirectories(file.Sciezka));
-                        entries.AddRange(Directory.GetFiles(file.Sciezka));
-                    }
-                }
-            }
-            catch { }
-
-            tempFolderCollection = new ReadOnlyCollection<string>(entries);
-
-            foreach (var entry in tempFolderCollection)
-            {
-                if (bgGetFilesBackgroundWorker.CancellationPending)
-                {
-                    e.Cancel = true;
-                    return;
-                }
-                bgGetFilesBackgroundWorker.ReportProgress(1, entry);
-            }
-
-            SciezkaAktywnejPaczki = file.Sciezka;
-
-            OnPropertyChanged(nameof(SciezkaAktywnejPaczki));
-        }
-
-        private void BgGetFilesBackgroundWorker_ProgressChanged(object? sender, ProgressChangedEventArgs e)
-        {
-            var filePath = e.UserState?.ToString() ?? string.Empty;
-            var fileName = Path.GetFileName(filePath);
-
-            // Domyślny obiekt Plik
-            Plik plik = new Plik(filePath, fileName)
-            {
-                CzyUkryty = IsFileHidden(filePath),
-                CzyFolder = IsDirectory(filePath),
-                Rozszerzenie = GetFileExtension(filePath)
-            };
-
-            // określ kategorię przy pomocy jednej funkcji
-            var category = PathHelpers.GetFileCategoryFromPath(filePath);
-
-            // Jeśli plik to metadane — spróbuj sparsować go do obiektu Metadata (z pola Grupowanie)
-            if (category == FileCategory.Metadane)
-            {
-                try
-                {
-                    var meta = MetadataLoader.ParseMetadaneMetadata(filePath);
-                    if (meta != null)
-                    {
-                        // zachowaj atrybuty pliku i użyj obiektu Metadata zamiast zwykłego Plik
-                        meta.CzyUkryty = plik.CzyUkryty;
-                        meta.CzyFolder = plik.CzyFolder;
-                        meta.Rozszerzenie = plik.Rozszerzenie;
-                        meta.Category = FileCategory.Metadane;
-                        plik = meta;
-                    }
-                }
-                catch
-                {
-                    // w razie błędu zostanie użyty zwykły Plik (bez Grupowanie)
-                }
-            }
-            else if (category == FileCategory.Sprawy)
-            {
-                // opcjonalnie: parsuj pliki sprawy do Metadata, żeby mieć dodatkowe pola (DataOd/DataDo)
-                try
-                {
-                    var metaSprawa = MetadataLoader.ParseSprawaMetadata(filePath);
-                    if (metaSprawa != null)
-                    {
-                        metaSprawa.CzyUkryty = plik.CzyUkryty;
-                        metaSprawa.CzyFolder = plik.CzyFolder;
-                        metaSprawa.Rozszerzenie = plik.Rozszerzenie;
-                        metaSprawa.Category = FileCategory.Sprawy;
-                        plik = metaSprawa;
-                    }
-                }
-                catch
-                {
-                    // fallback do zwykłego Plik
-                }
-            }
-
-            PlikiWPaczce.Add(plik);
-            OnPropertyChanged(nameof(PlikiWPaczce));
-
-            switch (category)
-            {
-                case FileCategory.Dokumenty:
-                    Dokumenty.Add(plik);
-                    OnPropertyChanged(nameof(Dokumenty));
-                    break;
-                case FileCategory.Sprawy:
-                    Sprawy.Add(plik);
-                    OnPropertyChanged(nameof(Sprawy));
-                    break;
-                case FileCategory.Metadane:
-                    Metadane.Add(plik);
-                    OnPropertyChanged(nameof(Metadane));
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private void BgGetFilesBackgroundWorker_RunWorkerCompleted(object? sender, RunWorkerCompletedEventArgs e)
-        {
-            // sortowanie, odświeżenie widoku
-
-
-            BuildNodes();
-
         }
 
         #endregion
@@ -708,14 +560,12 @@ namespace eADMwizualizator.ViewModels
             try
             {
                 var ext = Path.GetExtension(fileName);
-                if (string.IsNullOrEmpty(ext))
-                    return null;
+                if (string.IsNullOrEmpty(ext)) return null;
                 return ext.TrimStart('.').ToLowerInvariant();
             }
             catch { return null; }
         }
 
-        // Ustawia SelectedDocumentDisplayName
         private void UpdateSelectedDocumentDisplayName()
         {
             if (_selectedDocumentFile == null)
@@ -746,7 +596,6 @@ namespace eADMwizualizator.ViewModels
             SelectedDocumentDisplayName = tytul ?? string.Empty;
         }
 
-        // Ustawia SelectedMetadataDisplayName
         private void UpdateSelectedMetadataDisplayName()
         {
             if (_selectedMetadataFile == null)
@@ -756,7 +605,8 @@ namespace eADMwizualizator.ViewModels
             }
 
             var tytul = _selectedMetadataFile.Tytul;
-            var sciezka = _selected_metadata_filePath();
+            var sciezka = _selectedMetadataFile?.Sciezka;
+
             if (!string.IsNullOrWhiteSpace(tytul) && Path.HasExtension(tytul))
             {
                 SelectedMetadataDisplayName = tytul!;
@@ -776,24 +626,35 @@ namespace eADMwizualizator.ViewModels
             SelectedMetadataDisplayName = tytul ?? string.Empty;
         }
 
-        private string? _selected_metadata_filePath()
+        private void SelectView(object? parameter)
         {
-            return _selectedMetadataFile?.Sciezka;
+            string? name = null;
+            if (parameter is SubMenu s) name = s.Name;
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            name = name.Trim();
+            SelectedViewName = name;
+
+            if (_view_indexes_try_get(name, out int idx))
+            {
+                ActiveTabIndex = idx;
+            }
+            else
+            {
+                ActiveTabIndex = 1;
+                SelectedViewName = ViewNames?.ElementAtOrDefault(ActiveTabIndex);
+            }
+
+            // lokalna helper aby uniknąć wielokrotnego dostępu
+            bool _view_indexes_try_get(string name, out int index) { index = 0; return _viewIndexes != null && _viewIndexes.TryGetValue(name, out index); }
         }
 
         #endregion
 
         #region Commands
 
-        private ICommand _openSettingsCommand;
-        public ICommand openSettingsCommand
-        {
-            get
-            {
-                return _openSettingsCommand ??
-                    (_openSettingsCommand = new Command(() => { }));
-            }
-        }
+        private ICommand? _openSettingsCommand;
+        public ICommand OpenSettingsCommand => _openSettingsCommand ??= new Command(() => { /* otwórz okno ustawień */ });
 
         #endregion
     }
