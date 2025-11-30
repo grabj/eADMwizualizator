@@ -1,18 +1,21 @@
 ﻿using System;
 using System.IO;
-using System.Windows;
-using System.Windows.Controls;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Media.Imaging;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Xml.Linq;
 
 namespace eADMwizualizator.Helpers
 {
     public static class UniversalDocumentViewer
     {
         private static readonly string[] ImageExtensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif", ".ico" };
-        private static readonly string[] TextExtensions = { ".txt", ".log", ".csv", ".json", ".xml", ".html", ".htm", ".css", ".js", ".md"};
+        private static readonly string[] XmlExtensions = { ".xml", ".xades" };
+        private static readonly string[] TextExtensions = { ".txt", ".log", ".csv", ".json", ".html", ".htm", ".css", ".js", ".md" };
         private static readonly string[] OfficeDocumentExtensions = { ".doc", ".docx", ".odt", ".ppt", ".pptx", ".odp" };
 
         public static readonly DependencyProperty DocumentSourceProperty =
@@ -70,6 +73,13 @@ namespace eADMwizualizator.Helpers
                 if (Array.IndexOf(OfficeDocumentExtensions, extension) >= 0)
                 {
                     await HandleOfficeDocumentAsync(contentControl, filePath, extension);
+                    return;
+                }
+
+                // Pliki XML/XAdES (TreeView)
+                if (Array.IndexOf(XmlExtensions, extension) >= 0)
+                {
+                    await LoadXmlFileAsync(contentControl, filePath, extension);
                     return;
                 }
 
@@ -210,6 +220,133 @@ namespace eADMwizualizator.Helpers
             }
         }
 
+        #endregion
+
+        #region Obsługa plików XML/XAdES
+
+        private static async Task LoadXmlFileAsync(ContentControl contentControl, string xmlPath, string extension)
+        {
+            try
+            {
+                ShowLoadingMessage(contentControl, $"Ładowanie pliku {extension}...");
+                // Najpierw sprawdź czy plik jest poprawnym XML
+                XDocument? doc = null;
+                bool isValidXml = false;
+
+                try
+                {
+                    doc = await Task.Run(() => XDocument.Load(xmlPath));
+                    isValidXml = true;
+                }
+                catch (System.Xml.XmlException)
+                {
+                    // Plik nie jest poprawnym XML - spróbuj wyczyścić i załadować ponownie
+                    try
+                    {
+                        var content = await Task.Run(() => File.ReadAllText(xmlPath, Encoding.UTF8));
+
+                        // Usuń BOM i białe znaki na początku
+                        content = content.TrimStart('\uFEFF', '\u200B', ' ', '\t', '\r', '\n');
+
+                        // Spróbuj sparsować ponownie
+                        doc = XDocument.Parse(content);
+                        isValidXml = true;
+                    }
+                    catch
+                    {
+                        // Nadal nie można sparsować jako XML
+                        isValidXml = false;
+                    }
+                }
+
+                if (isValidXml && doc?.Root != null)
+                {
+                    // Wyświetl jako TreeView
+                    var treeView = new TreeView
+                    {
+                        FontFamily = new FontFamily("Consolas, Courier New"),
+                        FontSize = 12
+                    };
+
+                    var rootItem = CreateTreeItem(doc.Root, true);
+                    treeView.Items.Add(rootItem);
+                    rootItem.IsExpanded = true;
+
+                    var scrollViewer = new ScrollViewer
+                    {
+                        HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                        Content = treeView
+                    };
+
+                    contentControl.Content = scrollViewer;
+                }
+                else
+                {
+                    // Fallback: wyświetl jako zwykły tekst
+                    await LoadTextFileAsync(contentControl, xmlPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage(contentControl, $"Nie można załadować pliku XML: {ex.Message}");
+            }
+        }
+
+        private static TreeViewItem CreateTreeItem(XElement element, bool expandAll)
+        {
+            var item = new TreeViewItem
+            {
+                IsExpanded = expandAll // Rozwiń wszystkie węzły domyślnie
+            };
+
+            // Nagłówek z nazwą elementu i atrybutami
+            var header = new TextBlock();
+            header.Inlines.Add(new Run($"<{element.Name.LocalName}") { Foreground = Brushes.DarkSlateGray, FontWeight = FontWeights.Bold });
+
+            foreach (var attr in element.Attributes())
+            {
+                if (!attr.IsNamespaceDeclaration)
+                {
+                    header.Inlines.Add(new Run($" {attr.Name.LocalName}") { Foreground = Brushes.Purple });
+                    header.Inlines.Add(new Run("=") { Foreground = Brushes.Black });
+                    header.Inlines.Add(new Run($"\"{attr.Value}\"") { Foreground = Brushes.Green });
+                }
+            }
+
+            header.Inlines.Add(new Run(">") { Foreground = Brushes.DarkSlateGray, FontWeight = FontWeights.Bold });
+
+            item.Header = header;
+
+            // Dzieci
+            if (element.HasElements)
+            {
+                foreach (var child in element.Elements())
+                {
+                    item.Items.Add(CreateTreeItem(child, expandAll));
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(element.Value))
+            {
+                var valueItem = new TreeViewItem
+                {
+                    Header = new TextBlock
+                    {
+                        Text = element.Value.Trim(),
+                        Foreground = Brushes.DarkBlue,
+                        TextWrapping = TextWrapping.Wrap
+                    }
+                };
+                item.Items.Add(valueItem);
+            }
+
+            return item;
+        }
+
+        #endregion
+
+        #region Komunikaty
+
         private static string GetDocumentTypeName(string extension)
         {
             return extension.ToLowerInvariant() switch
@@ -218,13 +355,11 @@ namespace eADMwizualizator.Helpers
                 ".odt" => "dokumentu ODT",
                 ".ppt" or ".pptx" => "prezentacji PowerPoint",
                 ".odp" => "prezentacji ODP",
+                ".xml" => "pliku XML",
+                ".xades" => "pliku XAdES",
                 _ => "dokumentu"
             };
         }
-
-        #endregion
-
-        #region Komunikaty
 
         private static void ShowLoadingMessage(ContentControl contentControl, string message)
         {
