@@ -131,6 +131,7 @@ namespace eADMwizualizator.ViewModels
                     {
                         UpdateSelectedMetadataDisplayName();
                         SelectedMetadata.Clear();
+                        MetadataHtmlContent = string.Empty;
                     }
                     return;
                 }
@@ -159,6 +160,13 @@ namespace eADMwizualizator.ViewModels
         {
             get => _selectedMetadataDisplayName ?? string.Empty;
             private set => SetProperty(ref _selectedMetadataDisplayName, value);
+        }
+
+        private string _metadataHtmlContent = string.Empty;
+        public string MetadataHtmlContent
+        {
+            get => _metadataHtmlContent;
+            private set => SetProperty(ref _metadataHtmlContent, value ?? string.Empty);
         }
 
         #endregion
@@ -241,6 +249,7 @@ namespace eADMwizualizator.ViewModels
                 Sprawy.Clear();
                 Metadane.Clear();
                 SelectedMetadata.Clear();
+                MetadataHtmlContent = string.Empty;
                 Nodes.Clear();
             });
 
@@ -398,6 +407,7 @@ namespace eADMwizualizator.ViewModels
         private async Task LoadSelectedDocumentFile()
         {
             SelectedMetadata.Clear();
+            MetadataHtmlContent = string.Empty;
 
             if (_selectedDocumentFile == null)
             {
@@ -439,14 +449,30 @@ namespace eADMwizualizator.ViewModels
 
             try
             {
-                // Wykonanie I/O poza wątkiem UI
-                var entries = await Task.Run(() => MetadataLoader.LoadMetadataEntries(candidatePath));
+                // Znajdź plik XSL w katalogu aplikacji
+                var xslPath = FindXslFile();
 
-                // Aktualizacja kolekcji na wątku UI
-                Application.Current.Dispatcher.Invoke(() =>
+                if (!string.IsNullOrEmpty(xslPath) && File.Exists(xslPath))
                 {
-                    foreach (var e in entries) SelectedMetadata.Add(e);
-                });
+                    // Wykonanie transformacji poza wątkiem UI
+                    var htmlContent = await Task.Run(() => XsltTransformer.TransformXmlToHtml(candidatePath, xslPath));
+
+                    // Aktualizacja na wątku UI
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        MetadataHtmlContent = htmlContent;
+                    });
+                }
+                else
+                {
+                    // Fallback: załaduj jako proste pary klucz-wartość
+                    var entries = await Task.Run(() => MetadataLoader.LoadMetadataEntries(candidatePath));
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        foreach (var e in entries) SelectedMetadata.Add(e);
+                    });
+                }
             }
             catch (Exception ex)
             {
@@ -461,6 +487,7 @@ namespace eADMwizualizator.ViewModels
         {
             SelectedMetadata.Clear();
             SelectedDocumentFile = null;
+            MetadataHtmlContent = string.Empty;
 
             if (_selectedMetadataFile == null)
             {
@@ -478,8 +505,21 @@ namespace eADMwizualizator.ViewModels
 
             try
             {
-                var entries = MetadataLoader.LoadMetadataEntries(metaFilePath);
-                foreach (var e in entries) SelectedMetadata.Add(e);
+                // Znajdź plik XSL
+                var xslPath = FindXslFile();
+
+                if (!string.IsNullOrEmpty(xslPath) && File.Exists(xslPath))
+                {
+                    // Wykonaj transformację
+                    var htmlContent = XsltTransformer.TransformXmlToHtml(metaFilePath, xslPath);
+                    MetadataHtmlContent = htmlContent;
+                }
+                else
+                {
+                    // Fallback: załaduj jako proste pary klucz-wartość
+                    var entries = MetadataLoader.LoadMetadataEntries(metaFilePath);
+                    foreach (var e in entries) SelectedMetadata.Add(e);
+                }
             }
             catch (Exception ex)
             {
@@ -519,6 +559,23 @@ namespace eADMwizualizator.ViewModels
             {
                 SelectedMetadata.Add(new MetadataEntry { Name = "Info", Value = $"Nie znaleziono dokumentu: {docFileName}" });
             }
+        }
+
+        private string? FindXslFile()
+        {
+            // Szukaj pliku eADM_styl.xsl w katalogu aplikacji
+            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+            var xslPath = Path.Combine(appDir, "eADM_styl.xsl");
+
+            if (File.Exists(xslPath))
+                return xslPath;
+
+            // Alternatywnie szukaj w katalogu roboczy
+            xslPath = Path.Combine(Directory.GetCurrentDirectory(), "eADM_styl.xsl");
+            if (File.Exists(xslPath))
+                return xslPath;
+
+            return null;
         }
 
         #endregion

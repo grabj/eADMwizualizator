@@ -18,4 +18,11 @@
     <PackageReference Include="SharpCompress" Version="0.41.0" />
   </ItemGroup>
 
+  <!-- Kopiowanie pliku XSL do katalogu wyjściowego -->
+  <ItemGroup>
+    <Content Include="eADM_styl.xsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

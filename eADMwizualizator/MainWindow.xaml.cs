@@ -3,6 +3,7 @@ using eADMwizualizator.Helpers;
 using eADMwizualizator.Models;
 using Microsoft.Win32;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 
@@ -20,6 +21,26 @@ namespace eADMwizualizator
         {
             InitializeComponent();
             this.Title = Tytul;
+
+            // Subskrybuj zmiany w MetadataHtmlContent aby przełączać widoczność kontrolek
+            if (this.DataContext is PlikViewModel vm)
+            {
+                vm.PropertyChanged += ViewModel_PropertyChanged;
+            }
+        }
+
+        private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(PlikViewModel.MetadataHtmlContent))
+            {
+                if (sender is PlikViewModel vm)
+                {
+                    bool hasHtml = !string.IsNullOrEmpty(vm.MetadataHtmlContent);
+                    
+                    MetadataWebBrowser.Visibility = hasHtml ? Visibility.Visible : Visibility.Collapsed;
+                    Metadata_List.Visibility = hasHtml ? Visibility.Collapsed : Visibility.Visible;
+                }
+            }
         }
 
         private async void OtworzPaczke_Click(object sender, RoutedEventArgs e)

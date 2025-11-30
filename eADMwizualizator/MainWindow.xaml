@@ -223,10 +223,23 @@
                         <ContentControl helpers:PdfContentControlExtensions.PdfSource="{Binding SelectedFilePath}"/>
                     </Border>
 
-                    <!-- Metadata (góra) -->
+                    <!-- Metadata (góra) - wyświetla HTML lub ListBox w zależności od dostępności HTML -->
                     <Border Grid.Row="0" Grid.Column="2" Background="#FFE5E5E5" BorderThickness="1,0,0,0" BorderBrush="DimGray" Margin="0">
-                        <ListBox x:Name="Metadata_List" ItemsSource="{Binding SelectedMetadata}" ItemTemplate="{StaticResource MetadataItemTemplate}"
-                                 HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" BorderThickness="0"  />
+                        <Grid>
+                            <!-- WebBrowser dla HTML (widoczny gdy MetadataHtmlContent nie jest pusty) -->
+                            <WebBrowser x:Name="MetadataWebBrowser" 
+                                       helpers:WebBrowserHelper.Html="{Binding MetadataHtmlContent}"
+                                       Visibility="Collapsed"/>
+
+                            <!-- ListBox dla prostych metadanych (domyślnie widoczny) -->
+                            <ListBox x:Name="Metadata_List" 
+                                    ItemsSource="{Binding SelectedMetadata}" 
+                                    ItemTemplate="{StaticResource MetadataItemTemplate}"
+                                    HorizontalContentAlignment="Stretch" 
+                                    VerticalContentAlignment="Stretch" 
+                                    BorderThickness="0"
+                                    Visibility="Visible"/>
+                        </Grid>
                     </Border>
 
                     <!-- pojedynczy splitter użyty dla obu wierszy -->
