@@ -220,8 +220,8 @@
 
                     <!-- dokument (góra) -->
                     <Border Grid.Row="0" Grid.Column="0" BorderBrush="DimGray" Background="#FFD8E8F7" BorderThickness="0,0,1,0" Margin="0">
-                        <ContentControl helpers:PdfContentControlExtensions.PdfSource="{Binding SelectedFilePath}"/>
-                    </Border>
+                        <ContentControl helpers:UniversalDocumentViewer.DocumentSource="{Binding SelectedFilePath}"/>
+                    </Border>   
 
                     <!-- Metadata (góra) - wyświetla HTML lub ListBox w zależności od dostępności HTML -->
                     <Border Grid.Row="0" Grid.Column="2" Background="#FFE5E5E5" BorderThickness="1,0,0,0" BorderBrush="DimGray" Margin="0">

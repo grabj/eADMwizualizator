@@ -34,11 +34,6 @@ namespace eADMwizualizator.Helpers
             }
 
             var ext = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
-            //if (ext != "pdf")
-            //{
-            //    host.Content = null;
-            //    return;
-            //}
 
             try
             {
