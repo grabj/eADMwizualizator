@@ -84,7 +84,7 @@
                     <!-- jeśli zaznaczone, panel nie będzie automatycznie zamykany po otwarciu paczki -->
                     <MenuItem x:Name="AlwaysShowOpenPackageMenuItem"
                           Header="Nie zamykaj panelu otwierania paczki" IsCheckable="True"
-                          IsChecked="{Binding NieZamykajPaneluOtworzPaczke, Mode=TwoWay}"
+                          IsChecked="{Binding KeepOpenPackagePanelVisible, Mode=TwoWay}"
                           ToolTip="Przycisk 'Otwórz paczkę' pozostanie widoczny po zaimportowaniu paczki"/>
                     <Separator/>
                     <MenuItem Header="Zresetuj rozmiar czcionki" Click="ResetFont_Click"/>
@@ -126,7 +126,7 @@
                                 <Setter Property="Visibility" Value="Collapsed"/>
                                 <Setter Property="Opacity" Value="1"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsOpenPackageVisible}" Value="True">
+                                    <DataTrigger Binding="{Binding IsKeepOpenPackagePanelVisible}" Value="True">
                                         <Setter Property="Visibility" Value="Visible"/>
                                         <DataTrigger.EnterActions>
                                             <BeginStoryboard>
@@ -152,37 +152,44 @@
                     </Border>
 
                     <!-- Listy plików -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
-                        <TabControl SelectedIndex="{Binding ActiveTabIndex, Mode=TwoWay}" >
-                            <TabItem >
-                                <TabItem.Header>
-                                    <TextBlock Text="Dokumenty" FontWeight="SemiBold"/>
-                                </TabItem.Header>
-                                <ListView ItemsSource="{Binding Dokumenty}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                          SelectedItem="{Binding SelectedDocumentFile, Mode=TwoWay}"/>
-                            </TabItem>
-                            <TabItem >
-                                <TabItem.Header>
-                                    <TextBlock Text="Sprawy" FontWeight="SemiBold"/>
-                                </TabItem.Header>
-                                <!-- wstawione bezpośrednio: drzewo spraw powiązane z PlikViewModel.Nodes -->
-                                <TreeView x:Name="SprawyTree"
-                                    ItemsSource="{Binding Nodes}"
-                                    ItemTemplate="{StaticResource SprawaNodeTemplate}"
-                                    SelectedItemChanged="SprawyTree_SelectedItemChanged" > 
-                                    <TreeView.ItemContainerStyle>
-                                        <Style TargetType="TreeViewItem">
-                                            <Setter Property="IsExpanded" Value="True"/>
-                                        </Style>
-                                    </TreeView.ItemContainerStyle>
-                                </TreeView>
-                            </TabItem>
-                            <TabItem Header="Metadane" >
-                                <ListView ItemsSource="{Binding Metadane}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                          SelectedItem="{Binding SelectedMetadataFile, Mode=TwoWay}"/>
-                            </TabItem>
-                        </TabControl>
-                    </ScrollViewer>
+                    <TabControl Grid.Row="1" SelectedIndex="{Binding ActiveTabIndex, Mode=TwoWay}" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+                        <TabItem >
+                            <TabItem.Header>
+                                <TextBlock Text="Dokumenty" FontWeight="SemiBold"/>
+                            </TabItem.Header>
+                            <ListView ItemsSource="{Binding Dokumenty}" ItemTemplate="{StaticResource FileItemTemplate}"
+                                      SelectedItem="{Binding SelectedDocumentFile, Mode=TwoWay}"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                        </TabItem>
+                        <TabItem >
+                            <TabItem.Header>
+                                <TextBlock Text="Sprawy" FontWeight="SemiBold"/>
+                            </TabItem.Header>
+                            <!-- drzewo spraw z paskiem przewijania -->
+                            <TreeView x:Name="SprawyTree"
+                                ItemsSource="{Binding Nodes}"
+                                ItemTemplate="{StaticResource SprawaNodeTemplate}"
+                                SelectedItemChanged="SprawyTree_SelectedItemChanged"
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                <TreeView.ItemContainerStyle>
+                                    <Style TargetType="TreeViewItem">
+                                        <Setter Property="IsExpanded" Value="True"/>
+                                    </Style>
+                                </TreeView.ItemContainerStyle>
+                            </TreeView>
+                        </TabItem>
+                        <TabItem >
+                            <TabItem.Header>
+                                <TextBlock Text="Metadane"/>
+                            </TabItem.Header>
+                            <ListView ItemsSource="{Binding Metadane}" ItemTemplate="{StaticResource FileItemTemplate}"
+                                      SelectedItem="{Binding SelectedMetadataFile, Mode=TwoWay}"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                        </TabItem>
+                    </TabControl>
                 </Grid>
             </Border>
 

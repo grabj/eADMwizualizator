@@ -35,9 +35,9 @@ namespace eADMwizualizator
                 await vm.LoadDirectoryFromArchiveAsync(picker.FileName);
 
                 // po udanym otwarciu schowaj górny panel tylko gdy opcja NIEZAMYKAJ jest false
-                if (!vm.NieZamykajPaneluOtworzPaczke)
+                if (!vm.KeepOpenPackagePanelVisible)
                 {
-                    vm.IsOpenPackageVisible = false;
+                    vm.IsKeepOpenPackagePanelVisible = false;
                     // ustaw tytuł okna z nazwą otwartego archiwum 
                 }
 
@@ -88,7 +88,7 @@ namespace eADMwizualizator
             if (this.DataContext is PlikViewModel vm)
             {
                 // zawsze przełączaj widoczność panelu niezależnie od ustawienia "NieZamykajPaneluOtworzPaczke"
-                vm.IsOpenPackageVisible = !vm.IsOpenPackageVisible;
+                vm.IsKeepOpenPackagePanelVisible = !vm.IsKeepOpenPackagePanelVisible;
             }
         }
         private void Exit_Click(object sender, RoutedEventArgs e)

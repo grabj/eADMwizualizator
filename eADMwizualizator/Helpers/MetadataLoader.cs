@@ -30,7 +30,7 @@ namespace eADMwizualizator.Helpers
             }
             catch
             {
-                // w razie b³êdu zwracamy pust¹ listê (wyœwietlenie b³êdu obs³u¿y wywo³uj¹cy)
+                // w razie b³êdu zwracamy pust¹ listê
             }
 
             return list;
@@ -39,6 +39,7 @@ namespace eADMwizualizator.Helpers
         // Parsuje plik z folderu "Sprawy" i tworzy obiekt Metadata z wybranymi polami:
         // - data/od -> DataOd
         // - data/do -> DataDo
+        // - wartoscId pobieran¹ z dokument/identyfikator/wartosc lub dokument/identyfikator/wartoscId
         public static Metadata? ParseSprawaMetadata(string path)
         {
             if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
@@ -56,16 +57,59 @@ namespace eADMwizualizator.Helpers
                 if (odEl != null && DateTime.TryParse(odEl.Value.Trim(), out var dtOd)) dataOd = dtOd;
                 if (doEl != null && DateTime.TryParse(doEl.Value.Trim(), out var dtDo)) dataDo = dtDo;
 
+                // Pobranie wartoœci identyfikatora dokumentu (wartosc / wartoscId)
+                string? wartoscId = null;
+
+                // Najpierw spróbuj znaleŸæ element <dokument>/<identyfikator> z namespace
+                var identEl = root.Descendants(ns + "dokument").Descendants(ns + "identyfikator").FirstOrDefault();
+
+                // Fallback: wyszukaj element <identyfikator> bez namespace (case-insensitive),
+                // preferuj¹c te bêd¹ce w kontekœcie elementu o nazwie "dokument"
+                if (identEl == null)
+                {
+                    identEl = root.Descendants()
+                                  .FirstOrDefault(x =>
+                                      string.Equals(x.Name.LocalName, "identyfikator", StringComparison.OrdinalIgnoreCase)
+                                      && x.Parent != null
+                                      && string.Equals(x.Parent.Name.LocalName, "dokument", StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Jeœli nadal null, spróbuj znaleŸæ pierwszy element o LocalName == "identyfikator"
+                if (identEl == null)
+                {
+                    identEl = root.Descendants()
+                                  .FirstOrDefault(x => string.Equals(x.Name.LocalName, "identyfikator", StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (identEl != null)
+                {
+                    // szukamy pola 'wartosc' lub 'wartoscId' (najpierw z namespace, potem po LocalName)
+                    var wartoscEl = identEl.Element(ns + "wartosc") ?? identEl.Element(ns + "wartoscId");
+                    if (wartoscEl == null)
+                    {
+                        wartoscEl = identEl.Elements().FirstOrDefault(e =>
+                            string.Equals(e.Name.LocalName, "wartosc", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(e.Name.LocalName, "wartoscId", StringComparison.OrdinalIgnoreCase));
+                    }
+
+                    if (wartoscEl != null)
+                    {
+                        var val = wartoscEl.Value?.Trim();
+                        if (!string.IsNullOrWhiteSpace(val)) wartoscId = val;
+                    }
+                }
+
                 var fileName = Path.GetFileName(path) ?? path;
                 var tytul = fileName;
 
                 // Tworzymy obiekt Metadata
-                var meta = new Metadata(path, tytul, dataOd, dataDo)
+                var meta = new Metadata(path, tytul, dataOd, dataDo, wartoscId)
                 {
                     Sciezka = path,
                     Tytul = tytul,
                     DataOd = dataOd,
                     DataDo = dataDo,
+                    WartoscId = wartoscId
                 };
 
                 return meta;
@@ -123,7 +167,6 @@ namespace eADMwizualizator.Helpers
                     }
                 }
 
-                // data/czas (bez dodatkowych heurystyk)
                 DateTime? data = null;
                 var czasEl = root.Descendants(ns + "data").Descendants(ns + "czas").FirstOrDefault()
                               ?? root.Descendants().FirstOrDefault(x => string.Equals(x.Name.LocalName, "czas", StringComparison.OrdinalIgnoreCase));

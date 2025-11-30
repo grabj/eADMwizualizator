@@ -6,15 +6,16 @@ namespace eADMwizualizator.ViewModels
     public class SprawaNode
     {
         public Plik Sprawa { get; }
-        public string GrupowanieKey { get; }
+        // Klucz u¿ywany do grupowania — teraz nazwa ogólna (wartoœæId lub nazwa pliku)
+        public string Key { get; }
         public ObservableCollection<Plik> Documents { get; } = new ObservableCollection<Plik>();
 
-        public SprawaNode(Plik sprawa, string grupowanieKey)
+        public SprawaNode(Plik sprawa, string key)
         {
             Sprawa = sprawa;
-            GrupowanieKey = grupowanieKey ?? string.Empty;
+            Key = key ?? string.Empty;
         }
 
-        public string DisplayName => Sprawa?.Tytul ?? Sprawa?.Sciezka ?? GrupowanieKey;
+        public string DisplayName => Sprawa?.Tytul ?? Sprawa?.Sciezka ?? Key;
     }
 }

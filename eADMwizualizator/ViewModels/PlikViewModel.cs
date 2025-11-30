@@ -17,15 +17,15 @@ namespace eADMwizualizator.ViewModels
 {
     public class PlikViewModel : BaseViewModel
     {
-        private CancellationTokenSource? _scanCts;
+        private CancellationTokenSource? _scanFolders;
 
         #region Właściwości
 
-        private string? _sciezkaAktywnejPaczki;
-        public string? SciezkaAktywnejPaczki
+        private string? _activePackagePath;
+        public string? ActivePackagePath
         {
-            get => _sciezkaAktywnejPaczki;
-            private set => SetProperty(ref _sciezkaAktywnejPaczki, value);
+            get => _activePackagePath;
+            private set => SetProperty(ref _activePackagePath, value);
         }
 
         public ObservableCollection<Plik> Dokumenty { get; } = new ObservableCollection<Plik>();
@@ -37,41 +37,43 @@ namespace eADMwizualizator.ViewModels
 
         public ReadOnlyCollection<string>? tempFolderCollection;
 
-        internal static readonly List<string> PaczkaEadmRozszerzenia = new List<string> { "tar", "zip" };
+        internal static readonly List<string> eadmPackageExtensions = new List<string> { "tar", "zip" };
 
-        // widoki
         public ICommand SelectViewCommand { get; private set; }
+
         private int _activeTabIndex;
         public int ActiveTabIndex
         {
             get => _activeTabIndex;
             set => SetProperty(ref _activeTabIndex, value);
         }
+
         private string? _selectedViewName;
         public string? SelectedViewName
         {
             get => _selectedViewName;
             set => SetProperty(ref _selectedViewName, value);
         }
+
         public IReadOnlyList<string>? ViewNames { get; private set; }
         private Dictionary<string, int>? _viewIndexes;
 
-        private bool _isOpenPackageVisible = true;
-        public bool IsOpenPackageVisible
+        private bool _isKeepOpenPackagePanelVisible = true;
+        public bool IsKeepOpenPackagePanelVisible
         {
-            get => _isOpenPackageVisible;
-            set => SetProperty(ref _isOpenPackageVisible, value);
+            get => _isKeepOpenPackagePanelVisible;
+            set => SetProperty(ref _isKeepOpenPackagePanelVisible, value);
         }
 
-        private bool _nieZamykajPaneluOtworzPaczke;
-        public bool NieZamykajPaneluOtworzPaczke
+        private bool _keepOpenPackagePanelVisible;
+        public bool KeepOpenPackagePanelVisible
         {
-            get => _nieZamykajPaneluOtworzPaczke;
+            get => _keepOpenPackagePanelVisible;
             set
             {
-                if (SetProperty(ref _nieZamykajPaneluOtworzPaczke, value) && value)
+                if (SetProperty(ref _keepOpenPackagePanelVisible, value) && value)
                 {
-                    IsOpenPackageVisible = true;
+                    IsKeepOpenPackagePanelVisible = true;
                 }
             }
         }
@@ -86,8 +88,8 @@ namespace eADMwizualizator.ViewModels
                 {
                     SelectedFilePath = _selectedDocumentFile?.Sciezka;
                     UpdateSelectedDocumentDisplayName();
-                    // wczytanie metadanych asynchronicznie (jeżeli kosztowne)
-                    LoadSelectedDocumentFile();
+                    // Wywołanie asynchroniczne żeby nie blokować UI
+                    _ = LoadSelectedDocumentFile();
                 }
             }
         }
@@ -133,7 +135,7 @@ namespace eADMwizualizator.ViewModels
 
         public PlikViewModel()
         {
-            SciezkaAktywnejPaczki = @".\temp";
+            ActivePackagePath = @".\temp";
 
             ViewNames = new List<string> { "Dokumenty", "Sprawy", "Metadane" }.AsReadOnly();
             _viewIndexes = ViewNames.Select((n, i) => new { n, i })
@@ -155,12 +157,12 @@ namespace eADMwizualizator.ViewModels
                 throw new ArgumentNullException(nameof(archivePath));
 
             var ext = Path.GetExtension(archivePath).TrimStart('.').ToLowerInvariant();
-            if (!PaczkaEadmRozszerzenia.Contains(ext))
+            if (!eadmPackageExtensions.Contains(ext))
                 throw new NotSupportedException("Nieobsługiwany format pliku.");
 
             string targetDir = Helpers.TempDirectoryManager.CreateRunTempDir();
 
-            // ekstrakcję wykonujemy w tle, propagujemy cancellation
+            // rozpakowywanie w tle
             await Task.Run(() =>
             {
                 using Stream fileStream = File.Open(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -192,17 +194,14 @@ namespace eADMwizualizator.ViewModels
             await LoadDirectoryAsync(new Plik(targetDir, Path.GetFileName(targetDir)));
         }
 
-        // Aby zachować kompatybilność, udostępniamy obie metody:
-        public void LoadDirectory(Plik paczka) => _ = LoadDirectoryAsync(paczka);
-
         public async Task LoadDirectoryAsync(Plik paczka)
         {
             // anuluj poprzednie skanowanie
-            _scanCts?.Cancel();
-            _scanCts?.Dispose();
-            _scanCts = new CancellationTokenSource();
+            _scanFolders?.Cancel();
+            _scanFolders?.Dispose();
+            _scanFolders = new CancellationTokenSource();
 
-            // wyczyść stare zbiory (warstwa UI zaktualizuje się automatycznie)
+            // wyczyść stare dane na UI
             Application.Current.Dispatcher.Invoke(() =>
             {
                 PlikiWPaczce.Clear();
@@ -217,22 +216,22 @@ namespace eADMwizualizator.ViewModels
 
             try
             {
-                var entries = await Task.Run(() => EnumerateEntriesSafe(paczka.Sciezka, _scanCts.Token), _scanCts.Token);
+                var entries = await Task.Run(() => EnumerateEntriesSafe(paczka.Sciezka, _scanFolders.Token), _scanFolders.Token);
                 tempFolderCollection = new ReadOnlyCollection<string>(entries);
 
                 // dodawaj elementy stopniowo na wątku UI
                 foreach (var entry in tempFolderCollection)
                 {
-                    _scanCts.Token.ThrowIfCancellationRequested();
+                    _scanFolders.Token.ThrowIfCancellationRequested();
                     AddEntryToCollections(entry);
                 }
 
-                SciezkaAktywnejPaczki = paczka.Sciezka;
+                ActivePackagePath = paczka.Sciezka;
                 BuildNodes();
             }
             catch (OperationCanceledException)
             {
-                // anulowano skanowanie — nic więcej nie robimy
+                // anulowano skanowanie
             }
             catch (Exception ex)
             {
@@ -245,7 +244,7 @@ namespace eADMwizualizator.ViewModels
             }
             finally
             {
-                // czyszczenie tokenu zostawiamy do następnego uruchomienia
+                // czyszczenie tokenu do następnego uruchomienia
             }
         }
 
@@ -277,13 +276,13 @@ namespace eADMwizualizator.ViewModels
                     }
                     catch
                     {
-                        // ignorujemy błędy odczytu pojedynczego katalogu
+                        // ignoruj
                     }
                 }
             }
             catch
             {
-                // ignorujemy błędy odczytu katalogów ale w docelowym kodzie loguj
+                // ignoruj
             }
             return result;
         }
@@ -318,7 +317,7 @@ namespace eADMwizualizator.ViewModels
                     }
                     catch
                     {
-                        // parse error -> użyj zwykłego Plik; wprowadź logowanie w przyszłości
+                        // parse error 
                     }
                 }
                 else if (category == FileCategory.Sprawy)
@@ -364,7 +363,7 @@ namespace eADMwizualizator.ViewModels
 
         #region Metadane
 
-        private void LoadSelectedDocumentFile()
+        private async Task LoadSelectedDocumentFile()
         {
             SelectedMetadata.Clear();
 
@@ -384,9 +383,9 @@ namespace eADMwizualizator.ViewModels
             var metadataFileName = docFileName + ".xml";
 
             string? candidatePath = null;
-            if (!string.IsNullOrEmpty(SciezkaAktywnejPaczki))
+            if (!string.IsNullOrEmpty(ActivePackagePath))
             {
-                var direct = Path.Combine(SciezkaAktywnejPaczki, PathHelpers.GetFolderName(FileCategory.Metadane), metadataFileName);
+                var direct = Path.Combine(ActivePackagePath, PathHelpers.GetFolderName(FileCategory.Metadane), metadataFileName);
                 if (File.Exists(direct)) candidatePath = direct;
             }
 
@@ -399,18 +398,30 @@ namespace eADMwizualizator.ViewModels
 
             if (string.IsNullOrEmpty(candidatePath) || !File.Exists(candidatePath))
             {
-                SelectedMetadata.Add(new MetadataEntry { Name = "Info", Value = $"Brak pliku metadanych: {metadataFileName}" });
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    SelectedMetadata.Add(new MetadataEntry { Name = "Info", Value = $"Brak pliku metadanych: {metadataFileName}" });
+                });
                 return;
             }
 
             try
             {
-                var entries = MetadataLoader.LoadMetadataEntries(candidatePath);
-                foreach (var e in entries) SelectedMetadata.Add(e);
+                // Wykonanie I/O poza wątkiem UI
+                var entries = await Task.Run(() => MetadataLoader.LoadMetadataEntries(candidatePath));
+
+                // Aktualizacja kolekcji na wątku UI
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (var e in entries) SelectedMetadata.Add(e);
+                });
             }
             catch (Exception ex)
             {
-                SelectedMetadata.Add(new MetadataEntry { Name = "Błąd", Value = ex.Message });
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    SelectedMetadata.Add(new MetadataEntry { Name = "Błąd", Value = ex.Message });
+                });
             }
         }
 
@@ -452,9 +463,9 @@ namespace eADMwizualizator.ViewModels
 
             var foundDoc = PathHelpers.FindDocumentInPackage(PlikiWPaczce, docFileName);
 
-            if (foundDoc == null && !string.IsNullOrEmpty(SciezkaAktywnejPaczki))
+            if (foundDoc == null && !string.IsNullOrEmpty(ActivePackagePath))
             {
-                var candidate = Path.Combine(SciezkaAktywnejPaczki, "dokumenty", docFileName);
+                var candidate = Path.Combine(ActivePackagePath, "dokumenty", docFileName);
                 if (File.Exists(candidate))
                 {
                     foundDoc = new Plik(candidate, docFileName)
@@ -486,30 +497,58 @@ namespace eADMwizualizator.ViewModels
         {
             Nodes.Clear();
 
+            // helper lokalny do normalizacji kluczy (usuwa ścieżki, rozszerzenia, trim, lowercase)
+            static string? NormalizeKey(string? raw)
+            {
+                if (string.IsNullOrWhiteSpace(raw)) return null;
+                try
+                {
+                    var last = Path.GetFileName(raw.Trim());
+                    var noExt = Path.GetFileNameWithoutExtension(last);
+                    return noExt?.Trim().ToLowerInvariant();
+                }
+                catch
+                {
+                    return raw.Trim().ToLowerInvariant();
+                }
+            }
+
+            // Lista węzłów razem z ich możliwymi kluczami (WartoscId, nazwa pliku bez ext)
+            var nodeKeyMap = new List<(SprawaNode Node, HashSet<string> Keys)>();
+
             foreach (var sprawa in Sprawy)
             {
                 var fileName = Path.GetFileName(sprawa.Tytul ?? Path.GetFileName(sprawa.Sciezka) ?? string.Empty);
                 var fallbackKey = Path.GetFileNameWithoutExtension(fileName)?.Trim() ?? string.Empty;
 
-                string? sprawaKeyRaw = null;
-                if (sprawa is Metadata ms && !string.IsNullOrWhiteSpace(ms.Grupowanie))
+                var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                if (sprawa is Metadata ms && !string.IsNullOrWhiteSpace(ms.WartoscId))
                 {
-                    sprawaKeyRaw = Path.GetFileName(ms.Grupowanie);
+                    var k = NormalizeKey(ms.WartoscId);
+                    if (!string.IsNullOrWhiteSpace(k)) keys.Add(k);
                 }
 
-                var sprawaKey = !string.IsNullOrWhiteSpace(sprawaKeyRaw)
-                    ? Path.GetFileNameWithoutExtension(sprawaKeyRaw).Trim()
-                    : fallbackKey;
+                // zawsze dodajemy fallback — nazwa pliku bez rozszerzenia
+                var fb = NormalizeKey(fallbackKey);
+                if (!string.IsNullOrWhiteSpace(fb)) keys.Add(fb);
 
-                Nodes.Add(new SprawaNode(sprawa, sprawaKey));
+                // wybieramy reprezentatywny klucz do wyświetlenia (pierwszy z zestawu lub fallback)
+                var primaryKey = keys.FirstOrDefault() ?? (fallbackKey ?? string.Empty);
+
+                var node = new SprawaNode(sprawa, primaryKey);
+                Nodes.Add(node);
+                nodeKeyMap.Add((node, keys));
             }
 
+            // Przypisujemy dokumenty do węzłów — tworzymy zbiór kluczy dokumentu na podstawie jego metadanych (Grupowanie)
             foreach (var doc in Dokumenty)
             {
-                var docFileName = Path.GetFileName(doc.Tytul ?? Path.GetFileName(doc.Sciezka) ?? string.Empty);
-                if (string.IsNullOrEmpty(docFileName)) continue;
+                // lepsze źródło nazwy pliku: użyj rzeczywistej ścieżki jeśli dostępna
+                var docBaseName = Path.GetFileName(doc.Tytul ?? Path.GetFileName(doc.Sciezka) ?? string.Empty);
+                if (string.IsNullOrEmpty(docBaseName)) continue;
 
-                var expectedMetaFileName = docFileName + ".xml";
+                var expectedMetaFileName = docBaseName + ".xml";
 
                 var candidateMeta = Metadane.FirstOrDefault(m =>
                     string.Equals(Path.GetFileName(m.Sciezka), expectedMetaFileName, StringComparison.OrdinalIgnoreCase))
@@ -518,16 +557,42 @@ namespace eADMwizualizator.ViewModels
 
                 if (candidateMeta == null) continue;
 
-                string? grupRaw = null;
-                if (candidateMeta is Metadata m && !string.IsNullOrWhiteSpace(m.Grupowanie)) grupRaw = m.Grupowanie;
-                if (string.IsNullOrWhiteSpace(grupRaw)) continue;
+                var docKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                var grupNormalized = Path.GetFileNameWithoutExtension(grupRaw).Trim().ToLowerInvariant();
+                if (candidateMeta is Metadata md)
+                {
+                    var g = NormalizeKey(md.Grupowanie);
+                    if (!string.IsNullOrWhiteSpace(g)) docKeys.Add(g);
+                }
+                else
+                {
+                    // fallback: jeśli candidateMeta nie był sparsowany jako Metadata, spróbuj sparsować teraz
+                    try
+                    {
+                        var parsed = MetadataLoader.ParseMetadaneMetadata(candidateMeta.Sciezka);
+                        if (parsed != null)
+                        {
+                            var g = NormalizeKey(parsed.Grupowanie);
+                            if (!string.IsNullOrWhiteSpace(g)) docKeys.Add(g);
+                        }
+                    }
+                    catch
+                    {
+                        // ignoruj błędy parsowania tutaj
+                    }
+                }
 
-                var targetNode = Nodes.FirstOrDefault(n =>
-                    string.Equals(Path.GetFileNameWithoutExtension(n.GrupowanieKey)?.Trim().ToLowerInvariant(), grupNormalized, StringComparison.OrdinalIgnoreCase));
+                if (docKeys.Count == 0) continue;
 
-                if (targetNode != null) targetNode.Documents.Add(doc);
+                // znajdź pierwszy węzeł, którego klucze przecinają się ze zbiorami dokumentu
+                foreach (var (node, keys) in nodeKeyMap)
+                {
+                    if (keys.Overlaps(docKeys))
+                    {
+                        node.Documents.Add(doc);
+                        break; // przypisz dokument tylko do jednego węzła
+                    }
+                }
             }
         }
 
@@ -628,8 +693,33 @@ namespace eADMwizualizator.ViewModels
 
         private void SelectView(object? parameter)
         {
+            // obsłuż różne typy parametrów (string, obiekty z Name/Header, fallback do ToString())
             string? name = null;
-            if (parameter is SubMenu s) name = s.Name;
+
+            if (parameter == null)
+            {
+                return;
+            }
+            else if (parameter is string sStr)
+            {
+                name = sStr;
+            }
+            else
+            {
+                var type = parameter.GetType();
+                var prop = type.GetProperty("Name") ?? type.GetProperty("Header");
+                if (prop != null)
+                {
+                    var val = prop.GetValue(parameter) as string;
+                    if (!string.IsNullOrWhiteSpace(val)) name = val;
+                }
+
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    name = parameter.ToString();
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(name)) return;
 
             name = name.Trim();
@@ -648,13 +738,6 @@ namespace eADMwizualizator.ViewModels
             // lokalna helper aby uniknąć wielokrotnego dostępu
             bool _view_indexes_try_get(string name, out int index) { index = 0; return _viewIndexes != null && _viewIndexes.TryGetValue(name, out index); }
         }
-
-        #endregion
-
-        #region Commands
-
-        private ICommand? _openSettingsCommand;
-        public ICommand OpenSettingsCommand => _openSettingsCommand ??= new Command(() => { /* otwórz okno ustawień */ });
 
         #endregion
     }

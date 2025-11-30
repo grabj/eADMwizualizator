@@ -24,12 +24,13 @@ namespace eADMwizualizator.Models
         public string? Uprawnienia { get; set; }
 
         // konstruktor dla pliku Spraw
-        public Metadata(string sciezka, string tytul, DateTime? dataOd, DateTime? dataDo) : base(sciezka, tytul)
+        public Metadata(string sciezka, string tytul, DateTime? dataOd, DateTime? dataDo, string? wartoscId) : base(sciezka, tytul)
         {
             Sciezka = sciezka;
             Tytul = tytul;
             DataOd = dataOd;
             DataDo = dataDo;
+            WartoscId = wartoscId;
         }
 
         // konstruktor dla pliku Metadane
