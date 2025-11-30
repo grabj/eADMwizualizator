@@ -1,7 +1,6 @@
-using eADMwizualizator.Models;
 using System.Collections.ObjectModel;
 
-namespace eADMwizualizator.ViewModels
+namespace eADMwizualizator.Models
 {
     public class SprawaNode
     {

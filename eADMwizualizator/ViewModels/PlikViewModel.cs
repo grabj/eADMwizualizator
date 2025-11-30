@@ -84,27 +84,59 @@ namespace eADMwizualizator.ViewModels
             get => _selectedDocumentFile;
             set
             {
-                if (SetProperty(ref _selectedDocumentFile, value))
+                // SetProperty zwróci false gdy referencja się nie zmieni.
+                // W takim przypadku wymuszamy odświeżenie szczegółów jeśli wartość nie jest null.
+                var changed = SetProperty(ref _selectedDocumentFile, value);
+                if (!changed)
                 {
-                    SelectedFilePath = _selectedDocumentFile?.Sciezka;
-                    UpdateSelectedDocumentDisplayName();
-                    // Wywołanie asynchroniczne żeby nie blokować UI
-                    _ = LoadSelectedDocumentFile();
+                    if (value != null)
+                    {
+                        SelectedFilePath = value.Sciezka;
+                        UpdateSelectedDocumentDisplayName();
+                        // Wywołanie asynchroniczne żeby nie blokować UI
+                        _ = LoadSelectedDocumentFile();
+                    }
+                    else
+                    {
+                        SelectedFilePath = null;
+                        UpdateSelectedDocumentDisplayName();
+                    }
+                    return;
                 }
+
+                SelectedFilePath = _selectedDocumentFile?.Sciezka;
+                UpdateSelectedDocumentDisplayName();
+                // Wywołanie asynchroniczne żeby nie blokować UI
+                _ = LoadSelectedDocumentFile();
             }
         }
 
-        private Plik? _selectedMetadataFile;
+        private Plik? _selectedMetadataFile;    
         public Plik? SelectedMetadataFile
         {
             get => _selectedMetadataFile;
             set
             {
-                if (SetProperty(ref _selectedMetadataFile, value))
+                // SetProperty zwróci false gdy referencja się nie zmieni.
+                // W takim przypadku wymuszamy odświeżenie metadanych jeśli wartość nie jest null.
+                var changed = SetProperty(ref _selectedMetadataFile, value);
+                if (!changed)
                 {
-                    UpdateSelectedMetadataDisplayName();
-                    LoadSelectedMetadataFile();
+                    if (value != null)
+                    {
+                        UpdateSelectedMetadataDisplayName();
+                        LoadSelectedMetadataFile();
+                    }
+                    else
+                    {
+                        UpdateSelectedMetadataDisplayName();
+                        SelectedMetadata.Clear();
+                    }
+                    return;
                 }
+
+                UpdateSelectedMetadataDisplayName();
+                LoadSelectedMetadataFile();
             }
         }
 
