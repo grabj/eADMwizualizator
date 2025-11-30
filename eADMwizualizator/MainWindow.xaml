@@ -100,11 +100,11 @@
         <Grid>
             <Grid.ColumnDefinitions>
                 <!-- lewy panel -->
-                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="1*" MinWidth="200"/>
                 <!-- miejsce dla splittera -->
                 <ColumnDefinition Width="5"/>
                 <!-- główny content -->
-                <ColumnDefinition Width="5*"/>
+                <ColumnDefinition Width="3*" MinWidth="600"/>
             </Grid.ColumnDefinitions>
 
             <!-- lewy panel -->
@@ -213,9 +213,9 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="2*" MinWidth="400"/>
                         <ColumnDefinition Width="5"/>
-                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*" MinWidth="200"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- dokument (góra) -->
