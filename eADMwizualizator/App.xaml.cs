@@ -11,7 +11,7 @@ namespace eADMwizualizator
     public partial class App : Application
     {
         private static readonly string SciezkaAktywnejPaczki = @".\temp";
-        private const double DefaultFontSize = 12.0;
+        private const double DefaultFontSize = 13.0;
 
         protected override void OnStartup(StartupEventArgs e)
         {

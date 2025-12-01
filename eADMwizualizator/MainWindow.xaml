@@ -23,12 +23,14 @@
     <Window.Resources>
         <!-- zasoby -->
         <DataTemplate x:Key="FileItemTemplate">
-            <TextBlock Text="{Binding Tytul}" TextTrimming="CharacterEllipsis" />
+            <TextBlock Text="{Binding Tytul}" 
+                       TextTrimming="CharacterEllipsis"
+                       ToolTip="{Binding Tytul}"/>
         </DataTemplate>
 
         <HierarchicalDataTemplate x:Key="SprawaNodeTemplate" ItemsSource="{Binding Documents}"
                                   ItemTemplate="{StaticResource FileItemTemplate}">
-            <StackPanel Orientation="Horizontal">
+            <StackPanel Orientation="Horizontal" ToolTip="{Binding Sprawa.Tytul}">
                 <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
                 <TextBlock Text="  " />
                 <TextBlock Text="{Binding Documents.Count, StringFormat='({0})'}" Foreground="Gray"/>
@@ -147,7 +149,7 @@
                             <Button x:Name="OpenPackageButton" Width="120" Height="40" Margin="1,3,1,5"
                                     Content="_Otwórz paczkę" Click="OtworzPaczke_Click" Cursor="Hand"
                                     FontSize="15" Background="#FFD8E8F7"
-                                    ToolTip="Uruchomienie systemowego eksploratora plików"/>
+                                    ToolTip="Wybierz plik do zwizualizowania..."/>
                         </StackPanel>
                     </Border>
 
@@ -160,7 +162,13 @@
                             <ListView ItemsSource="{Binding Dokumenty}" ItemTemplate="{StaticResource FileItemTemplate}"
                                       SelectedItem="{Binding SelectedDocumentFile, Mode=TwoWay}"
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="ToolTip" Value="{Binding Tytul}"/>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                            </ListView>
                         </TabItem>
                         <TabItem >
                             <TabItem.Header>
@@ -172,10 +180,11 @@
                                 ItemTemplate="{StaticResource SprawaNodeTemplate}"
                                 SelectedItemChanged="SprawyTree_SelectedItemChanged"
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                 <TreeView.ItemContainerStyle>
                                     <Style TargetType="TreeViewItem">
                                         <Setter Property="IsExpanded" Value="True"/>
+                                        <Setter Property="ToolTip" Value="{Binding Sprawa.Tytul}"/>
                                     </Style>
                                 </TreeView.ItemContainerStyle>
                             </TreeView>
@@ -187,7 +196,13 @@
                             <ListView ItemsSource="{Binding Metadane}" ItemTemplate="{StaticResource FileItemTemplate}"
                                       SelectedItem="{Binding SelectedMetadataFile, Mode=TwoWay}"
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="ToolTip" Value="{Binding Tytul}"/>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                            </ListView>
                         </TabItem>
                     </TabControl>
                 </Grid>

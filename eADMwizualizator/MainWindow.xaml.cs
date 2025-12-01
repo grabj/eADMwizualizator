@@ -11,9 +11,9 @@ namespace eADMwizualizator
 {
     public partial class MainWindow : Window
     {
-        private static string Tytul = "Twoja paczka eADM";
+        private static string Tytul = "Wizualizator paczki eADM";
  
-        private const double DefaultFontSize = 12.0;
+        private const double DefaultFontSize = 13.0;
         private const double MinFontSize = 8.0;
         private const double MaxFontSize = 24.0;
 
@@ -90,11 +90,6 @@ namespace eADMwizualizator
                 // bezpośrednie ustawienie Value przesunie suwak i zaktualizuje widok
                 FontSizeSlider.Value = DefaultFontSize;
             }
-        }
-        // Jedna definicja SetAppFontSize — przeniesiona do helpera
-        private double GetAppFontSize()
-        {
-            return FontSizeManager.GetAppFontSize(DefaultFontSize);
         }
         // Obsługa suwaka - przy zmianie aktualizuje zasób aplikacji
         private void FontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

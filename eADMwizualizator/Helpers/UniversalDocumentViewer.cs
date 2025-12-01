@@ -265,7 +265,7 @@ namespace eADMwizualizator.Helpers
                     var treeView = new TreeView
                     {
                         FontFamily = new FontFamily("Consolas, Courier New"),
-                        FontSize = 12
+                        //FontSize = 13
                     };
 
                     var rootItem = CreateTreeItem(doc.Root, true);
