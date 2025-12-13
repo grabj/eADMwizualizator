@@ -39,6 +39,12 @@ namespace eADMwizualizator
                     
                     MetadataWebBrowser.Visibility = hasHtml ? Visibility.Visible : Visibility.Collapsed;
                     Metadata_List.Visibility = hasHtml ? Visibility.Collapsed : Visibility.Visible;
+                    
+                    // Dodaj to: ustaw HTML bezpośrednio
+                    if (hasHtml)
+                    {
+                        WebBrowserHelper.SetHtml(MetadataWebBrowser, vm.MetadataHtmlContent);
+                    }
                 }
             }
         }
@@ -54,13 +60,6 @@ namespace eADMwizualizator
             try
             {
                 await vm.LoadDirectoryFromArchiveAsync(picker.FileName);
-
-                // po udanym otwarciu schowaj górny panel tylko gdy opcja NIEZAMYKAJ jest false
-                if (!vm.KeepOpenPackagePanelVisible)
-                {
-                    vm.IsKeepOpenPackagePanelVisible = false;
-                    // ustaw tytuł okna z nazwą otwartego archiwum 
-                }
 
                 try
                 {
@@ -78,6 +77,7 @@ namespace eADMwizualizator
                 MessageBox.Show("Błąd: " + ex.Message);
             }
         }
+        
         #region Zmiana rozmiaru czcionki
         private void ResetFont_Click(object sender, RoutedEventArgs e)
         {
@@ -91,6 +91,7 @@ namespace eADMwizualizator
                 FontSizeSlider.Value = DefaultFontSize;
             }
         }
+        
         // Obsługa suwaka - przy zmianie aktualizuje zasób aplikacji
         private void FontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -99,18 +100,6 @@ namespace eADMwizualizator
             FontSizeManager.SetAppFontSize(v);
         }
         #endregion
-        private void ShowOpenPackage_Click(object sender, RoutedEventArgs e)
-        {
-            if (this.DataContext is PlikViewModel vm)
-            {
-                // zawsze przełączaj widoczność panelu niezależnie od ustawienia "NieZamykajPaneluOtworzPaczke"
-                vm.IsKeepOpenPackagePanelVisible = !vm.IsKeepOpenPackagePanelVisible;
-            }
-        }
-        private void Exit_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
 
         // Obsługa wyboru w drzewie spraw - korzysta z PlikViewModel jako pośrednika
         private void SprawyTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)

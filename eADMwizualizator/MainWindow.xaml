@@ -4,291 +4,405 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:eADMwizualizator"
-        xmlns:viewModel="clr-namespace:eADMwizualizator.ViewModels"
+        xmlns:vm="clr-namespace:eADMwizualizator.ViewModels"
         xmlns:helpers="clr-namespace:eADMwizualizator.Helpers"
         mc:Ignorable="d"
-        MinHeight="720" MinWidth="960" 
-        WindowState="Maximized">
+        Title="Wizualizator paczki eADM" 
+        Height="900" Width="1600"
+        WindowStartupLocation="CenterScreen">
+
     <Window.DataContext>
-        <viewModel:PlikViewModel/>
+        <vm:PlikViewModel/>
     </Window.DataContext>
 
-    <Window.Style>
-        <Style TargetType="{x:Type Window}">
-            <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
-            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
-        </Style>
-    </Window.Style>
-
     <Window.Resources>
-        <!-- zasoby -->
-        <DataTemplate x:Key="FileItemTemplate">
-            <TextBlock Text="{Binding Tytul}" 
-                       TextTrimming="CharacterEllipsis"
-                       ToolTip="{Binding Tytul}"/>
-        </DataTemplate>
+        <!-- Konwertery -->
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-        <HierarchicalDataTemplate x:Key="SprawaNodeTemplate" ItemsSource="{Binding Documents}"
-                                  ItemTemplate="{StaticResource FileItemTemplate}">
-            <StackPanel Orientation="Horizontal" ToolTip="{Binding Sprawa.Tytul}">
-                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-                <TextBlock Text="  " />
-                <TextBlock Text="{Binding Documents.Count, StringFormat='({0})'}" Foreground="Gray"/>
-            </StackPanel>
-        </HierarchicalDataTemplate>
+        <!-- Styl dla nowoczesnych przycisków -->
+        <Style x:Key="ModernButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#0078D4"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="FontSize" Value="{DynamicResource AppFontSize}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#005A9E"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#004578"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#CCCCCC"/>
+                    <Setter Property="Foreground" Value="#666666"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
 
-        <!-- Szablon dla metadanych -->
-        <DataTemplate x:Key="MetadataItemTemplate">
-            <StackPanel Margin="4">
-                <TextBlock Text="{Binding Name}" FontWeight="Bold" />
-                <TextBlock Text="{Binding Value}" TextWrapping="Wrap" Margin="0,2,0,4"/>
-            </StackPanel>
-        </DataTemplate>
+        <!-- Styl dla przycisku akcji (pomarańczowy) -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+            <Setter Property="Background" Value="#FF6F00"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E65100"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#C43E00"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Styl dla przycisku sukcesu (zielony) -->
+        <Style x:Key="SuccessButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+            <Setter Property="Background" Value="#107C10"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#0E6B0E"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#0C5A0C"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Styl dla małych przycisków (kompaktowy) -->
+        <Style x:Key="SmallButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Height" Value="32"/>
+        </Style>
+
+        <!-- Styl dla paneli z zaokrąglonymi rogami -->
+        <Style x:Key="ModernBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E1E1E1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="15"/>
+        </Style>
+
+        <!-- Styl dla GridSplitter -->
+        <Style x:Key="ModernGridSplitterStyle" TargetType="GridSplitter">
+            <Setter Property="Background" Value="#E1E1E1"/>
+            <Setter Property="Width" Value="5"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="SizeWE"/>
+            <Setter Property="Margin" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#0078D4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Styl dla zakładek -->
+        <Style x:Key="ModernTabControlStyle" TargetType="TabControl">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style x:Key="ModernTabItemStyle" TargetType="TabItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border Name="Border" 
+                                Background="Transparent" 
+                                BorderThickness="0,0,0,3"
+                                BorderBrush="Transparent"
+                                Padding="20,10"
+                                Margin="0,0,5,0">
+                            <ContentPresenter ContentSource="Header" 
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#0078D4"/>
+                                <Setter TargetName="Border" Property="Background" Value="#F3F8FC"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#F9F9F9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="FontSize" Value="{DynamicResource AppFontSize}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#333333"/>
+        </Style>
+
+        <!-- Styl dla TreeView -->
+        <Style TargetType="TreeView">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="{DynamicResource AppFontSize}"/>
+        </Style>
+
+        <!-- Styl dla ListBox -->
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="{DynamicResource AppFontSize}"/>
+        </Style>
     </Window.Resources>
 
-    <DockPanel>
-        <DockPanel DockPanel.Dock="Top" LastChildFill="True" Margin="0">
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">                
-                <TextBlock Text="Rozmiar czcionki" VerticalAlignment="Center" Margin="4,0" ToolTip="Ustaw rozmiar czcionki" />
-                <!-- Inicjalizacja opźniona, żeby pobrać wartość z Resource AppFontSize -->
-                <Slider x:Name="FontSizeSlider"
-                        Width="200"
-                        Minimum="8" Maximum="24" 
-                        TickFrequency="1"
-                        IsSnapToTickEnabled="True"
-                        Value="{Binding FontSize, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}"
-                        ValueChanged="FontSizeSlider_ValueChanged"
-                        SmallChange="1" LargeChange="1"
-                        VerticalAlignment="Center"
-                        Margin="8,0" />
-                <TextBlock Text="{Binding Value, ElementName=FontSizeSlider, StringFormat='{}{0:0}'}"
-                           VerticalAlignment="Center" Margin="2,0,4,0"/>
-                <!-- Przycisk szybkiego resetu -->
-                <Button Margin="6,0"
-                        ToolTip="Zresetuj rozmiar czcionki"
-                        Click="ResetFont_Click"
-                        VerticalAlignment="Center" Background="{x:Null}" BorderBrush="{x:Null}">
-                    <TextBlock Text="⟲" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Button>
-            </StackPanel>
+    <Grid Background="#F5F5F5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-            <!-- Menu wypełnia pozostałą przestrzeń po lewej -->
-            <Menu BorderThickness="0,0,1,0" BorderBrush="DimGray">
-                <MenuItem Header="_Plik" TabIndex="1">
-                    <MenuItem Header="_Otwórz plik..." Click="OtworzPaczke_Click" />
-                    <Separator/>
-                    <MenuItem Header="_Wyjdź" Click="Exit_Click"/>
-                </MenuItem>
+        <!-- Górny panel - Otwórz paczkę + Ustawienia czcionki -->
+        <Border Grid.Row="0" 
+                Background="White" 
+                BorderBrush="#E1E1E1" 
+                BorderThickness="0,0,0,1"
+                Padding="20,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                <MenuItem Header="_Widok" TabIndex="2">
-                    <MenuItem Header="Pokaż/ukryj panel otwierania paczki" ToolTip="Zmiana widoczości przycisku otwierania paczki"
-                          Click="ShowOpenPackage_Click"/>
-                    <!-- jeśli zaznaczone, panel nie będzie automatycznie zamykany po otwarciu paczki -->
-                    <MenuItem x:Name="AlwaysShowOpenPackageMenuItem"
-                          Header="Nie zamykaj panelu otwierania paczki" IsCheckable="True"
-                          IsChecked="{Binding KeepOpenPackagePanelVisible, Mode=TwoWay}"
-                          ToolTip="Przycisk 'Otwórz paczkę' pozostanie widoczny po zaimportowaniu paczki"/>
-                    <Separator/>
-                    <MenuItem Header="Zresetuj rozmiar czcionki" Click="ResetFont_Click"/>
-                    <Separator/>
-                </MenuItem>
-                <MenuItem Header="Pomoc" TabIndex="3">
-                    <MenuItem Header="O programie"/>
-                </MenuItem>
-            </Menu>
-        </DockPanel>
+                <!-- Lewa strona - Otwórz paczkę -->
+                <Button Grid.Column="0"
+                        Content="📦 Otwórz paczkę eADM" 
+                        Click="OtworzPaczke_Click" 
+                        Style="{StaticResource ActionButtonStyle}"
+                        Height="40"
+                        MinWidth="180"
+                        HorizontalAlignment="Left"/>
 
-        <!-- Główny grid z miejscem na splitter między Selection a Content -->
-        <Grid>
+                <!-- Prawa strona - Ustawienia czcionki -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="🔤 Rozmiar czcionki:" 
+                              VerticalAlignment="Center"
+                              FontSize="12"
+                              FontWeight="SemiBold"
+                              Foreground="#666666"
+                              Margin="0,0,10,0"/>
+                    
+                    <Slider x:Name="FontSizeSlider" 
+                           Minimum="8" 
+                           Maximum="24" 
+                           Value="13"
+                           Width="120"
+                           TickFrequency="1"
+                           IsSnapToTickEnabled="True"
+                           ValueChanged="FontSizeSlider_ValueChanged"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
+                    
+                    <TextBlock Text="{Binding ElementName=FontSizeSlider, Path=Value, StringFormat={}{0:F0}}"
+                              VerticalAlignment="Center"
+                              FontSize="12"
+                              FontWeight="Bold"
+                              Foreground="#0078D4"
+                              Width="25"
+                              TextAlignment="Center"
+                              Margin="0,0,10,0"/>
+                    
+                    <Button Content="↺" 
+                           Click="ResetFont_Click" 
+                           Style="{StaticResource SmallButtonStyle}"
+                           ToolTip="Reset rozmiaru czcionki"
+                           Width="32"
+                           Padding="0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Główna zawartość z GridSplitterami -->
+        <Grid Grid.Row="1" Margin="20">
             <Grid.ColumnDefinitions>
-                <!-- lewy panel -->
-                <ColumnDefinition Width="1*" MinWidth="200"/>
-                <!-- miejsce dla splittera -->
-                <ColumnDefinition Width="5"/>
-                <!-- główny content -->
-                <ColumnDefinition Width="3*" MinWidth="600"/>
+                <ColumnDefinition Width="300" MinWidth="200"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*" MinWidth="400"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="350" MinWidth="250"/>
             </Grid.ColumnDefinitions>
 
-            <!-- lewy panel -->
-            <Border Grid.Column="0" x:Name="SelectionBorder" BorderThickness="0,0,1,1" BorderBrush="DimGray" Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}" Margin="0">
-                <Grid x:Name="Selection">
+            <!-- Lewy panel - Nawigacja -->
+            <Border Grid.Column="0" Style="{StaticResource ModernBorderStyle}" Margin="0">
+                <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- panel Otwórz Paczkę -->
-                    <Border Grid.Row="0" x:Name="TopPanelBorder" Padding="1">
-                        <Border.RenderTransform>
-                            <TranslateTransform Y="-20"/>
-                        </Border.RenderTransform>
+                    <!-- Tytuł -->
+                    <TextBlock Grid.Row="0" 
+                              Text="Nawigacja" 
+                              FontSize="18" 
+                              FontWeight="Bold" 
+                              Foreground="#333333"
+                              Margin="0,0,0,15"/>
 
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Setter Property="Opacity" Value="1"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsKeepOpenPackagePanelVisible}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <DataTrigger.EnterActions>
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                                     From="-20" To="0" Duration="0:0:0.18" />
-                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                     From="0" To="1" Duration="0:0:0.18"/>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </DataTrigger.EnterActions>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-
-                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Button x:Name="OpenPackageButton" Width="120" Height="40" Margin="1,3,1,5"
-                                    Content="_Otwórz paczkę" Click="OtworzPaczke_Click" Cursor="Hand"
-                                    FontSize="15" Background="#FFD8E8F7"
-                                    ToolTip="Wybierz plik do zwizualizowania..."/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Listy plików -->
-                    <TabControl Grid.Row="1" SelectedIndex="{Binding ActiveTabIndex, Mode=TwoWay}" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
-                        <TabItem >
-                            <TabItem.Header>
-                                <TextBlock Text="Dokumenty" FontWeight="SemiBold"/>
-                            </TabItem.Header>
-                            <ListView ItemsSource="{Binding Dokumenty}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                      SelectedItem="{Binding SelectedDocumentFile, Mode=TwoWay}"
-                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                <ListView.ItemContainerStyle>
-                                    <Style TargetType="ListViewItem">
-                                        <Setter Property="ToolTip" Value="{Binding Tytul}"/>
-                                    </Style>
-                                </ListView.ItemContainerStyle>
-                            </ListView>
+                    <!-- Zakładki -->
+                    <TabControl Grid.Row="1" 
+                               SelectedIndex="{Binding ActiveTabIndex}"
+                               Style="{StaticResource ModernTabControlStyle}">
+                        <TabItem Header="📄 Dokumenty" Style="{StaticResource ModernTabItemStyle}">
+                            <ListBox ItemsSource="{Binding Dokumenty}" 
+                                    SelectedItem="{Binding SelectedDocumentFile}"
+                                    DisplayMemberPath="Tytul"
+                                    Margin="0,10,0,0"/>
                         </TabItem>
-                        <TabItem >
-                            <TabItem.Header>
-                                <TextBlock Text="Sprawy" FontWeight="SemiBold"/>
-                            </TabItem.Header>
-                            <!-- drzewo spraw z paskiem przewijania -->
-                            <TreeView x:Name="SprawyTree"
-                                ItemsSource="{Binding Nodes}"
-                                ItemTemplate="{StaticResource SprawaNodeTemplate}"
-                                SelectedItemChanged="SprawyTree_SelectedItemChanged"
-                                ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                <TreeView.ItemContainerStyle>
-                                    <Style TargetType="TreeViewItem">
-                                        <Setter Property="IsExpanded" Value="True"/>
-                                        <Setter Property="ToolTip" Value="{Binding Sprawa.Tytul}"/>
-                                    </Style>
-                                </TreeView.ItemContainerStyle>
+                        
+                        <TabItem Header="📁 Sprawy" Style="{StaticResource ModernTabItemStyle}">
+                            <TreeView ItemsSource="{Binding Nodes}" 
+                                     SelectedItemChanged="SprawyTree_SelectedItemChanged"
+                                     Margin="0,10,0,0">
+                                <TreeView.ItemTemplate>
+                                    <HierarchicalDataTemplate ItemsSource="{Binding Documents}">
+                                        <TextBlock Text="{Binding DisplayName}" FontWeight="Bold"/>
+                                        <HierarchicalDataTemplate.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Tytul}"/>
+                                            </DataTemplate>
+                                        </HierarchicalDataTemplate.ItemTemplate>
+                                    </HierarchicalDataTemplate>
+                                </TreeView.ItemTemplate>
                             </TreeView>
                         </TabItem>
-                        <TabItem >
-                            <TabItem.Header>
-                                <TextBlock Text="Metadane"/>
-                            </TabItem.Header>
-                            <ListView ItemsSource="{Binding Metadane}" ItemTemplate="{StaticResource FileItemTemplate}"
-                                      SelectedItem="{Binding SelectedMetadataFile, Mode=TwoWay}"
-                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                <ListView.ItemContainerStyle>
-                                    <Style TargetType="ListViewItem">
-                                        <Setter Property="ToolTip" Value="{Binding Tytul}"/>
-                                    </Style>
-                                </ListView.ItemContainerStyle>
-                            </ListView>
+                        
+                        <TabItem Header="🏷️ Metadane" Style="{StaticResource ModernTabItemStyle}">
+                            <ListBox ItemsSource="{Binding Metadane}" 
+                                    SelectedItem="{Binding SelectedMetadataFile}"
+                                    DisplayMemberPath="Tytul"
+                                    Margin="0,10,0,0"/>
                         </TabItem>
                     </TabControl>
                 </Grid>
             </Border>
 
-            <!-- splitter między lewą a prawą częścią -->
-            <GridSplitter Grid.Column="1"
-                          Width="5"
-                          Background="#FFCCCCCC" BorderThickness="0,1" BorderBrush="DimGray"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Stretch"
-                          ShowsPreview="True"
-                          ResizeBehavior="PreviousAndNext"
-                          ResizeDirection="Columns"
-                          Cursor="SizeWE"/>
+            <!-- GridSplitter między nawigacją a dokumentami -->
+            <GridSplitter Grid.Column="1" 
+                         Style="{StaticResource ModernGridSplitterStyle}"
+                         ShowsPreview="True"
+                         ToolTip="Przeciągnij, aby zmienić szerokość panelu nawigacji" Margin="0,10,0,10"/>
 
-            <!-- główny content -->
-            <Border Grid.Column="2" x:Name="ContentBorder" BorderThickness="1" BorderBrush="DimGray" Background="Transparent" Margin="0">
-                <Grid x:Name="Content">
-                    <!-- teraz: wiersz 0 = zawartość, wiersz 1 = nagłówki poniżej -->
+            <!-- Środkowy panel - Podgląd dokumentu -->
+            <Border Grid.Column="2" Style="{StaticResource ModernBorderStyle}" Margin="0">
+                <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*" MinWidth="400"/>
-                        <ColumnDefinition Width="5"/>
-                        <ColumnDefinition Width="1*" MinWidth="200"/>
-                    </Grid.ColumnDefinitions>
 
-                    <!-- dokument (góra) -->
-                    <Border Grid.Row="0" Grid.Column="0" BorderBrush="DimGray" Background="#FFD8E8F7" BorderThickness="0,0,1,0" Margin="0">
-                        <ContentControl helpers:UniversalDocumentViewer.DocumentSource="{Binding SelectedFilePath}"/>
-                    </Border>   
-
-                    <!-- Metadata (góra) - wyświetla HTML lub ListBox w zależności od dostępności HTML -->
-                    <Border Grid.Row="0" Grid.Column="2" Background="#FFE5E5E5" BorderThickness="1,0,0,0" BorderBrush="DimGray" Margin="0">
-                        <Grid>
-                            <!-- WebBrowser dla HTML (widoczny gdy MetadataHtmlContent nie jest pusty) -->
-                            <WebBrowser x:Name="MetadataWebBrowser" 
-                                       helpers:WebBrowserHelper.Html="{Binding MetadataHtmlContent}"
-                                       Visibility="Collapsed"/>
-
-                            <!-- ListBox dla prostych metadanych (domyślnie widoczny) -->
-                            <ListBox x:Name="Metadata_List" 
-                                    ItemsSource="{Binding SelectedMetadata}" 
-                                    ItemTemplate="{StaticResource MetadataItemTemplate}"
-                                    HorizontalContentAlignment="Stretch" 
-                                    VerticalContentAlignment="Stretch" 
-                                    BorderThickness="0"
-                                    Visibility="Visible"/>
-                        </Grid>
+                    <!-- Nagłówek -->
+                    <Border Grid.Row="0" 
+                           Background="#F3F8FC" 
+                           CornerRadius="4" 
+                           Padding="12"
+                           Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="Podgląd dokumentu" 
+                                      FontSize="16" 
+                                      FontWeight="Bold" 
+                                      Foreground="#0078D4"
+                                      Margin="0,0,0,5"/>
+                            <TextBlock Text="{Binding SelectedDocumentDisplayName}" 
+                                      FontSize="12"
+                                      Foreground="#666666"
+                                      TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
                     </Border>
 
-                    <!-- pojedynczy splitter użyty dla obu wierszy -->
-                    <GridSplitter Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
-                                  Width="5"
-                                  Background="#FFCCCCCC"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Stretch"
-                                  ShowsPreview="True"
-                                  ResizeBehavior="PreviousAndNext"
-                                  ResizeDirection="Columns"
-                                  Cursor="SizeWE"
-                                  IsTabStop="False"
-                                  Panel.ZIndex="1"/>
+                    <!-- Zawartość dokumentu -->
+                    <ContentControl Grid.Row="1" 
+                                   helpers:UniversalDocumentViewer.DocumentSource="{Binding SelectedFilePath}"/>
+                </Grid>
+            </Border>
 
-                    <!-- Nagłówki poniżej: dokument (dolny lewy) -->
-                    <Border Grid.Row="1" Grid.Column="0" BorderThickness="0,1,1,0" BorderBrush="Gray" 
-                            Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}" Padding="6,2,6,2">
-                        <TextBlock Text="{Binding SelectedDocumentDisplayName}" 
-                                   ToolTip="{Binding SelectedFilePath}"
-                                   TextTrimming="CharacterEllipsis" 
-                                   VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+            <!-- GridSplitter między dokumentami a metadanymi -->
+            <GridSplitter Grid.Column="3" 
+                         Style="{StaticResource ModernGridSplitterStyle}"
+                         ShowsPreview="True"
+                         ToolTip="Przeciągnij, aby zmienić szerokość panelu metadanych" Margin="0,10,0,10"/>
+
+            <!-- Prawy panel - Metadane -->
+            <Border Grid.Column="4" Style="{StaticResource ModernBorderStyle}" Margin="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Nagłówek metadanych -->
+                    <Border Grid.Row="0" 
+                           Background="#F3F8FC" 
+                           CornerRadius="4" 
+                           Padding="12"
+                           Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="Metadane" 
+                                      FontSize="16" 
+                                      FontWeight="Bold" 
+                                      Foreground="#0078D4"
+                                      Margin="0,0,0,5"/>
+                            <TextBlock Text="{Binding SelectedMetadataDisplayName}" 
+                                      FontSize="12"
+                                      Foreground="#666666"
+                                      TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
                     </Border>
 
-                    <!-- Nagłówki poniżej: metadata (dolny prawy) -->
-                    <Border Grid.Row="1" Grid.Column="2" BorderThickness="1,1,0,0" BorderBrush="Gray" 
-                            Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}" Padding="6,2,6,2">
-                        <TextBlock Text="{Binding SelectedMetadataDisplayName}" 
-                                   ToolTip="{Binding SelectedMetadataFile.Sciezka}"
-                                   TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="SemiBold"/>
-                    </Border>
+                    <!-- Zawartość metadanych -->
+                    <Grid Grid.Row="1">
+                        <!-- WebBrowser dla HTML -->
+                        <WebBrowser x:Name="MetadataWebBrowser" 
+                                   helpers:WebBrowserHelper.Html="{Binding MetadataHtmlContent}"
+                                   Visibility="Collapsed"
+                                   d:IsHidden="True"/>
+
+                        <!-- ListView dla surowych metadanych -->
+                        <ListView x:Name="Metadata_List" 
+                                 ItemsSource="{Binding SelectedMetadata}"
+                                 BorderThickness="0"
+                                 Background="White"
+                                 Visibility="Visible">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#F9F9F9" 
+                                           CornerRadius="4" 
+                                           Padding="10" 
+                                           Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" 
+                                                      FontWeight="SemiBold" 
+                                                      FontSize="12"
+                                                      Foreground="#0078D4"
+                                                      Margin="0,0,0,4"/>
+                                            <TextBlock Text="{Binding Value}" 
+                                                      TextWrapping="Wrap"
+                                                      FontSize="{DynamicResource AppFontSize}"
+                                                      Foreground="#333333"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
-    </DockPanel>
+    </Grid>
 </Window>

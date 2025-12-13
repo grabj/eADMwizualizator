@@ -58,26 +58,6 @@ namespace eADMwizualizator.ViewModels
         public IReadOnlyList<string>? ViewNames { get; private set; }
         private Dictionary<string, int>? _viewIndexes;
 
-        private bool _isKeepOpenPackagePanelVisible = true;
-        public bool IsKeepOpenPackagePanelVisible
-        {
-            get => _isKeepOpenPackagePanelVisible;
-            set => SetProperty(ref _isKeepOpenPackagePanelVisible, value);
-        }
-
-        private bool _keepOpenPackagePanelVisible;
-        public bool KeepOpenPackagePanelVisible
-        {
-            get => _keepOpenPackagePanelVisible;
-            set
-            {
-                if (SetProperty(ref _keepOpenPackagePanelVisible, value) && value)
-                {
-                    IsKeepOpenPackagePanelVisible = true;
-                }
-            }
-        }
-
         private Plik? _selectedDocumentFile;
         public Plik? SelectedDocumentFile
         {
@@ -455,7 +435,7 @@ namespace eADMwizualizator.ViewModels
                 if (!string.IsNullOrEmpty(xslPath) && File.Exists(xslPath))
                 {
                     // Wykonanie transformacji poza wątkiem UI
-                    var htmlContent = await Task.Run(() => XsltTransformer.TransformXmlToHtml(candidatePath, xslPath));
+                    var htmlContent = await Task.Run(() => XslTransformer.TransformXmlToHtml(candidatePath, xslPath));
 
                     // Aktualizacja na wątku UI
                     Application.Current.Dispatcher.Invoke(() =>
@@ -511,7 +491,7 @@ namespace eADMwizualizator.ViewModels
                 if (!string.IsNullOrEmpty(xslPath) && File.Exists(xslPath))
                 {
                     // Wykonaj transformację
-                    var htmlContent = XsltTransformer.TransformXmlToHtml(metaFilePath, xslPath);
+                    var htmlContent = XslTransformer.TransformXmlToHtml(metaFilePath, xslPath);
                     MetadataHtmlContent = htmlContent;
                 }
                 else

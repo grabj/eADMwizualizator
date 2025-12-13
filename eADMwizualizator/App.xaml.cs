@@ -40,7 +40,7 @@ namespace eADMwizualizator
             this.Exit += (object? sender, ExitEventArgs ev) => CleanTemp();
             this.DispatcherUnhandledException += (object? sender, DispatcherUnhandledExceptionEventArgs ev) => CleanTemp();
             AppDomain.CurrentDomain.ProcessExit += (object? sender, EventArgs ev) => CleanTemp();
-            SystemEvents.SessionEnding += (object? sender, SessionEndingEventArgs ev) => CleanTemp();
+            SystemEvents.SessionEnding += (sender, ev) => CleanTemp();
         }
 
         protected override void OnExit(ExitEventArgs e)

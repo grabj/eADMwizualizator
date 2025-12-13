@@ -5,7 +5,7 @@ using System.Xml.Xsl;
 
 namespace eADMwizualizator.Helpers
 {
-    public static class XsltTransformer
+    public static class XslTransformer
     {
         private static XslCompiledTransform? _cachedTransform;
         private static readonly object _lock = new object();
