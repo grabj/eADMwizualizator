@@ -9,94 +9,224 @@
         mc:Ignorable="d"
         Title="Wizualizator paczki eADM" 
         Height="900" Width="1600"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Icon="Resources/eADM_ikona.ico"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        TextOptions.TextHintingMode="Fixed"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
 
     <Window.DataContext>
         <vm:PlikViewModel/>
     </Window.DataContext>
 
     <Window.Resources>
-        <!-- Konwertery -->
+        <!-- 1. Konwertery -->
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-        <!-- Styl dla nowoczesnych przycisków -->
+        <!-- 2. Style pomocnicze dla Slidera -->
+        <Style x:Key="SliderButtonStyle" TargetType="RepeatButton">
+            <Setter Property="SnapsToDevicePixels" Value="true"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Focusable" Value="false"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style x:Key="SliderThumbStyle" TargetType="Thumb">
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Grid Background="Transparent">
+                            <!-- Cień pod thumbem -->
+                            <Ellipse Fill="#30000000" 
+                                    Width="24" 
+                                    Height="24"
+                                    Margin="0,2,0,0">
+                                <Ellipse.Effect>
+                                    <BlurEffect Radius="3"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            
+                            <!-- Okrągły uchwyt -->
+                            <Ellipse x:Name="ThumbEllipse"
+                                    Fill="#0078D4"
+                                    Width="20" 
+                                    Height="20"
+                                    Stroke="White"
+                                    StrokeThickness="2"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ThumbEllipse" Property="Width" Value="22"/>
+                                <Setter TargetName="ThumbEllipse" Property="Height" Value="22"/>
+                                <Setter TargetName="ThumbEllipse" Property="Fill" Value="#005A9E"/>
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ThumbEllipse" Property="Width" Value="24"/>
+                                <Setter TargetName="ThumbEllipse" Property="Height" Value="24"/>
+                                <Setter TargetName="ThumbEllipse" Property="Fill" Value="#004578"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 3. Główny styl Slidera -->
+        <Style x:Key="ModernSliderStyle" TargetType="Slider">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Ścieżka slidera -->
+                            <Border x:Name="TrackBackground"
+                                   Grid.Row="1"
+                                   Height="4"
+                                   Background="#E1E1E1"
+                                   CornerRadius="2"
+                                   Margin="5,0"/>
+                            
+                            <!-- Wypełniona część ścieżki (od początku do thumba) -->
+                            <Border x:Name="PART_SelectionRange"
+                                   Grid.Row="1"
+                                   Height="4"
+                                   Background="#0078D4"
+                                   CornerRadius="2"
+                                   HorizontalAlignment="Left"
+                                   Margin="5,0,0,0"/>
+    
+                            <!-- Track z thumbem -->
+                            <Track x:Name="PART_Track" Grid.Row="1">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge" Style="{StaticResource SliderButtonStyle}"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge" Style="{StaticResource SliderButtonStyle}"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb" Style="{StaticResource SliderThumbStyle}"/>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 4. Style przycisków - ROZJAŚNIONE KOLORY -->
         <Style x:Key="ModernButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#0078D4"/>
+            <!-- Jaśniejszy, bardziej żywy niebieski -->
+            <Setter Property="Background" Value="#2196F3"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="Padding" Value="12,6"/>
             <Setter Property="FontSize" Value="{DynamicResource AppFontSize}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" 
-                                CornerRadius="4"
-                                Padding="{TemplateBinding Padding}">
+                        <Border x:Name="ButtonBorder"
+                               Background="{TemplateBinding Background}" 
+                               CornerRadius="4"
+                               Padding="{TemplateBinding Padding}">
+                            <!-- Subtelny cień -->
+                            <Border.Effect>
+                                <DropShadowEffect Color="#000000" 
+                                                 BlurRadius="4" 
+                                                 ShadowDepth="2" 
+                                                 Direction="270"
+                                                 Opacity="0.2"/>
+                            </Border.Effect>
                             <ContentPresenter HorizontalAlignment="Center" 
-                                            VerticalAlignment="Center"/>
+                                            VerticalAlignment="Center"
+                                            TextOptions.TextRenderingMode="ClearType"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#005A9E"/>
+                    <!-- Średni niebieski przy hover -->
+                    <Setter Property="Background" Value="#FF1767B7"/>
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#004578"/>
+                    <!-- Ciemniejszy niebieski przy kliknięciu -->
+                    <Setter Property="Background" Value="#0D47A1"/>
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#CCCCCC"/>
-                    <Setter Property="Foreground" Value="#666666"/>
+                    <Setter Property="Background" Value="#BBDEFB"/>
+                    <Setter Property="Foreground" Value="#90A4AE"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- Styl dla przycisku akcji (pomarańczowy) -->
+        <!-- Przycisk akcji - NAJJAŚNIEJSZY ŻÓŁTY -->
         <Style x:Key="ActionButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
-            <Setter Property="Background" Value="#FF6F00"/>
+            <!-- Najjaśniejszy, energiczny żółty -->
+            <Setter Property="Background" Value="#FFEB3B"/>
+            <Setter Property="Foreground" Value="#212121"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#E65100"/>
+                    <!-- Złoty przy hover -->
+                    <Setter Property="Background" Value="#FDD835"/>
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#C43E00"/>
+                    <!-- Bursztynowy przy kliknięciu -->
+                    <Setter Property="Background" Value="#FBC02D"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#FFF9C4"/>
+                    <Setter Property="Foreground" Value="#BDBDBD"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- Styl dla przycisku sukcesu (zielony) -->
-        <Style x:Key="SuccessButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
-            <Setter Property="Background" Value="#107C10"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#0E6B0E"/>
-                </Trigger>
-                <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#0C5A0C"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- Styl dla małych przycisków (kompaktowy) -->
-        <Style x:Key="SmallButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
-            <Setter Property="Padding" Value="10,6"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Height" Value="32"/>
-        </Style>
-
-        <!-- Styl dla paneli z zaokrąglonymi rogami -->
+        <!-- 5. Style paneli -->
         <Style x:Key="ModernBorderStyle" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Background">
+                <Setter.Value>
+                    <SolidColorBrush Color="White" Opacity="0.95"/>
+                </Setter.Value>
+            </Setter>
             <Setter Property="BorderBrush" Value="#E1E1E1"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="15"/>
+            <!-- Efekt cienia (głębia) -->
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#000000" 
+                                     BlurRadius="8"
+                                     ShadowDepth="1" 
+                                     Direction="270"
+                                     Opacity="0.1"/>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <!-- Styl dla GridSplitter -->
         <Style x:Key="ModernGridSplitterStyle" TargetType="GridSplitter">
             <Setter Property="Background" Value="#E1E1E1"/>
             <Setter Property="Width" Value="5"/>
@@ -111,10 +241,11 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Styl dla zakładek -->
+        <!-- 6. Style zakładek -->
         <Style x:Key="ModernTabControlStyle" TargetType="TabControl">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderBrush" Value="#E1E1E1"/>
         </Style>
 
         <Style x:Key="ModernTabItemStyle" TargetType="TabItem">
@@ -125,8 +256,8 @@
                                 Background="Transparent" 
                                 BorderThickness="0,0,0,3"
                                 BorderBrush="Transparent"
-                                Padding="20,10"
-                                Margin="0,0,5,0">
+                                Padding="8,10"
+                                Margin="0,0,2,0">
                             <ContentPresenter ContentSource="Header" 
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"/>
@@ -143,23 +274,213 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Setter Property="FontSize" Value="{DynamicResource AppFontSize}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="#333333"/>
         </Style>
 
-        <!-- Styl dla TreeView -->
+        <!-- 7. Style kontrolek -->
         <Style TargetType="TreeView">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="{DynamicResource AppFontSize}"/>
         </Style>
 
-        <!-- Styl dla ListBox -->
         <Style TargetType="ListBox">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="{DynamicResource AppFontSize}"/>
+        </Style>
+
+        <!-- Styl dla ListBoxItem (Fluent Design) - POPRAWIONY -->
+        <Style x:Key="FluentListBoxItemStyle" TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="ItemBorder"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               CornerRadius="4"
+                               Margin="4,2">
+                            <!-- ZMIANA: Usunięto sztywny Padding, używamy dynamicznego -->
+                            <ContentPresenter Margin="8,4"
+                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#F0F3F8" Offset="0"/>
+                                            <GradientStop Color="#E8EDF5" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#E8F4FF"/>
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#0078D4"/>
+                                <Setter TargetName="ItemBorder" Property="BorderThickness" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Styl dla TreeViewItem (Fluent Design) - POPRAWIONY -->
+        <Style x:Key="FluentTreeViewItemStyle" TargetType="TreeViewItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TreeViewItem">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Główny wiersz z zawartością -->
+                            <Border x:Name="ItemBorder"
+                                   Grid.Row="0"
+                                   Background="Transparent"
+                                   BorderThickness="0"
+                                   CornerRadius="4"
+                                   Margin="2,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Toggle button (strzałka rozwijania) -->
+                                    <ToggleButton x:Name="Expander"
+                                                Grid.Column="0"
+                                                IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                                ClickMode="Press"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Cursor="Hand"
+                                                Margin="0,0,4,0"
+                                                Padding="2"
+                                                VerticalAlignment="Center">
+                                        <ToggleButton.Template>
+                                            <ControlTemplate TargetType="ToggleButton">
+                                                <Border Background="Transparent" 
+                                                       Padding="2"
+                                                       CornerRadius="3">
+                                                    <Path x:Name="ExpandPath"
+                                                         Data="M 4 6 L 10 12 L 4 18"
+                                                         Stroke="#666666"
+                                                         StrokeThickness="2"
+                                                         Width="14"
+                                                         Height="14"
+                                                         Stretch="Uniform"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"
+                                                         RenderTransformOrigin="0.5,0.5">
+                                                        <Path.RenderTransform>
+                                                            <RotateTransform Angle="0"/>
+                                                        </Path.RenderTransform>
+                                                    </Path>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Trigger.EnterActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetName="ExpandPath"
+                                                                                   Storyboard.TargetProperty="(Path.RenderTransform).(RotateTransform.Angle)"
+                                                                                   To="90"
+                                                                                   Duration="0:0:0.2">
+                                                                    </DoubleAnimation>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </Trigger.EnterActions>
+                                                        <Trigger.ExitActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetName="ExpandPath"
+                                                                                   Storyboard.TargetProperty="(Path.RenderTransform).(RotateTransform.Angle)"
+                                                                                   To="0"
+                                                                                   Duration="0:0:0.2">
+                                                                    </DoubleAnimation>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </Trigger.ExitActions>
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ExpandPath" Property="Stroke" Value="#0078D4"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </ToggleButton.Template>
+                                    </ToggleButton>
+                                    
+                                    <!-- Zawartość elementu - ZMIANA: Dynamiczny padding -->
+                                    <ContentPresenter x:Name="PART_Header"
+                                                    Grid.Column="1"
+                                                    ContentSource="Header"
+                                                    Margin="4,4"
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                                </Grid>
+                            </Border>
+                            
+                            <!-- Elementy potomne (dzieci) -->
+                            <ItemsPresenter x:Name="ItemsHost"
+                                           Grid.Row="1"
+                                           Margin="16,0,0,0"
+                                           Visibility="Collapsed"/>
+                        </Grid>
+                        
+                        <ControlTemplate.Triggers>
+                            <!-- Ukryj strzałkę jeśli brak dzieci -->
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
+                            </Trigger>
+                            
+                            <!-- Pokaż dzieci gdy rozwinięte -->
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            
+                            <!-- Efekt hover -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#F0F3F8" Offset="0"/>
+                                            <GradientStop Color="#E8EDF5" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            
+                            <!-- Efekt selekcji -->
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#E8F4FF"/>
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#0078D4"/>
+                                <Setter TargetName="ItemBorder" Property="BorderThickness" Value="1"/>
+                            </Trigger>
+                            
+                            <!-- Gdy zaznaczony i hover równocześnie -->
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#D6EBFF"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
@@ -174,7 +495,7 @@
                 Background="White" 
                 BorderBrush="#E1E1E1" 
                 BorderThickness="0,0,0,1"
-                Padding="20,15">
+                Padding="20,5">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -192,27 +513,29 @@
 
                 <!-- Prawa strona - Ustawienia czcionki -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock Text="🔤 Rozmiar czcionki:" 
+                    <TextBlock Text="Rozmiar czcionki:" 
                               VerticalAlignment="Center"
-                              FontSize="12"
+                              FontSize="{DynamicResource AppFontSize}"
                               FontWeight="SemiBold"
                               Foreground="#666666"
                               Margin="0,0,10,0"/>
                     
+                    <!-- ZAKTUALIZOWANY: Nowoczesny slider -->
                     <Slider x:Name="FontSizeSlider" 
-                           Minimum="8" 
-                           Maximum="24" 
+                           Minimum="10" 
+                           Maximum="22" 
                            Value="13"
-                           Width="120"
+                           Width="160"
                            TickFrequency="1"
                            IsSnapToTickEnabled="True"
                            ValueChanged="FontSizeSlider_ValueChanged"
+                           Style="{StaticResource ModernSliderStyle}"
                            VerticalAlignment="Center"
                            Margin="0,0,10,0"/>
                     
                     <TextBlock Text="{Binding ElementName=FontSizeSlider, Path=Value, StringFormat={}{0:F0}}"
                               VerticalAlignment="Center"
-                              FontSize="12"
+                              FontSize="{DynamicResource AppFontSize}"
                               FontWeight="Bold"
                               Foreground="#0078D4"
                               Width="25"
@@ -221,22 +544,23 @@
                     
                     <Button Content="↺" 
                            Click="ResetFont_Click" 
-                           Style="{StaticResource SmallButtonStyle}"
+                           Style="{StaticResource ModernButtonStyle}"
+                            FontSize="{DynamicResource AppFontSizeBig}"
                            ToolTip="Reset rozmiaru czcionki"
-                           Width="32"
+                           Width="40"
                            Padding="0"/>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Główna zawartość z GridSplitterami -->
-        <Grid Grid.Row="1" Margin="20">
+        <Grid Grid.Row="1" Margin="15">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="300" MinWidth="200"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*" MinWidth="400"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="350" MinWidth="250"/>
+                <ColumnDefinition Width="350" MinWidth="250" MaxWidth="600"/>
             </Grid.ColumnDefinitions>
 
             <!-- Lewy panel - Nawigacja -->
@@ -250,44 +574,145 @@
                     <!-- Tytuł -->
                     <TextBlock Grid.Row="0" 
                               Text="Nawigacja" 
-                              FontSize="18" 
+                              FontSize="{DynamicResource AppFontSizeLarge}" 
                               FontWeight="Bold" 
                               Foreground="#333333"
                               Margin="0,0,0,15"/>
 
-                    <!-- Zakładki -->
+                    <!-- Zakładki z adaptacyjnym wyświetlaniem - ZAWSZE W JEDNEJ LINII -->
                     <TabControl Grid.Row="1" 
+                               x:Name="NavigationTabControl"
                                SelectedIndex="{Binding ActiveTabIndex}"
                                Style="{StaticResource ModernTabControlStyle}">
-                        <TabItem Header="📄 Dokumenty" Style="{StaticResource ModernTabItemStyle}">
+    
+                        <!-- Ustaw panel poziomy z przewijaniem -->
+                        <TabControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" 
+                                           IsItemsHost="True"/>
+                            </ItemsPanelTemplate>
+                        </TabControl.ItemsPanel>
+    
+                        <!-- Włącz przewijanie poziome gdy zakładki się nie mieszczą -->
+                        <TabControl.Template>
+                            <ControlTemplate TargetType="TabControl">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <!-- Panel z zakładkami - z przewijaniem poziomym -->
+                                    <ScrollViewer Grid.Row="0" 
+                                                 HorizontalScrollBarVisibility="Hidden"
+                                                 VerticalScrollBarVisibility="Disabled"
+                                                 PanningMode="HorizontalOnly"
+                                                 Background="White"
+                                                 Margin="0">
+                                        <TabPanel IsItemsHost="True" 
+                                                 Background="Transparent"/>
+                                    </ScrollViewer>
+                                    
+                                    <!-- Zawartość zakładki -->
+                                    <Border Grid.Row="1"
+                                           Background="White"
+                                           BorderBrush="{TemplateBinding BorderBrush}"
+                                           BorderThickness="{TemplateBinding BorderThickness}">
+                                        <ContentPresenter ContentSource="SelectedContent"/>
+                                    </Border>
+                                </Grid>
+                            </ControlTemplate>
+                        </TabControl.Template>
+    
+                        <TabItem Style="{StaticResource ModernTabItemStyle}">
+                            <TabItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📄" 
+                                              FontSize="{DynamicResource AppFontSizeLarge}"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,5,0"/>
+                                    <TextBlock x:Name="DokumentyText"
+                                              Text="Dokumenty" 
+                                              FontSize="{DynamicResource AppFontSizeBig}"
+                                              VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </TabItem.Header>
                             <ListBox ItemsSource="{Binding Dokumenty}" 
                                     SelectedItem="{Binding SelectedDocumentFile}"
-                                    DisplayMemberPath="Tytul"
-                                    Margin="0,10,0,0"/>
+                                    ItemContainerStyle="{StaticResource FluentListBoxItemStyle}"
+                                    Margin="0,10,0,0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Tytul}" 
+                                                  FontSize="{DynamicResource AppFontSize}"
+                                                  TextTrimming="CharacterEllipsis"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </TabItem>
-                        
-                        <TabItem Header="📁 Sprawy" Style="{StaticResource ModernTabItemStyle}">
+    
+                        <TabItem Style="{StaticResource ModernTabItemStyle}">
+                            <TabItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📁" 
+                                              FontSize="{DynamicResource AppFontSizeLarge}"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,5,0"/>
+                                    <TextBlock x:Name="SprawyText"
+                                              Text="Sprawy" 
+                                              FontSize="{DynamicResource AppFontSizeBig}"
+                                              VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </TabItem.Header>
                             <TreeView ItemsSource="{Binding Nodes}" 
                                      SelectedItemChanged="SprawyTree_SelectedItemChanged"
                                      Margin="0,10,0,0">
+                                <!-- ItemContainerStyle -->
+                                <TreeView.ItemContainerStyle>
+                                    <Style TargetType="TreeViewItem" BasedOn="{StaticResource FluentTreeViewItemStyle}"/>
+                                </TreeView.ItemContainerStyle>
+                                
                                 <TreeView.ItemTemplate>
                                     <HierarchicalDataTemplate ItemsSource="{Binding Documents}">
-                                        <TextBlock Text="{Binding DisplayName}" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding DisplayName}" 
+                                                  FontWeight="Bold"
+                                                  FontSize="{DynamicResource AppFontSize}"/>
                                         <HierarchicalDataTemplate.ItemTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Tytul}"/>
+                                                <TextBlock Text="{Binding Tytul}"
+                                                          FontSize="{DynamicResource AppFontSize}"
+                                                          TextTrimming="CharacterEllipsis"/>
                                             </DataTemplate>
                                         </HierarchicalDataTemplate.ItemTemplate>
                                     </HierarchicalDataTemplate>
                                 </TreeView.ItemTemplate>
                             </TreeView>
                         </TabItem>
-                        
-                        <TabItem Header="🏷️ Metadane" Style="{StaticResource ModernTabItemStyle}">
+    
+                        <TabItem Style="{StaticResource ModernTabItemStyle}">
+                            <TabItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🏷️" 
+                                              FontSize="{DynamicResource AppFontSizeLarge}"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,5,0"/>
+                                    <TextBlock x:Name="MetadaneText"
+                                              Text="Metadane" 
+                                              FontSize="{DynamicResource AppFontSizeBig}"
+                                              VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </TabItem.Header>
                             <ListBox ItemsSource="{Binding Metadane}" 
                                     SelectedItem="{Binding SelectedMetadataFile}"
-                                    DisplayMemberPath="Tytul"
-                                    Margin="0,10,0,0"/>
+                                    Margin="0,10,0,0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Tytul}" 
+                                                  FontSize="{DynamicResource AppFontSize}"
+                                                  TextTrimming="CharacterEllipsis"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </TabItem>
                     </TabControl>
                 </Grid>
@@ -311,16 +736,21 @@
                     <Border Grid.Row="0" 
                            Background="#F3F8FC" 
                            CornerRadius="4" 
-                           Padding="12"
+                           Padding="10, 5, 2, 5"
                            Margin="0,0,0,15">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#0078D4" BlurRadius="5" ShadowDepth="0" Opacity="0.1"/>
+                        </Border.Effect>
                         <StackPanel>
+                            <!-- Nagłówek "Podgląd dokumentu" -->
                             <TextBlock Text="Podgląd dokumentu" 
-                                      FontSize="16" 
+                                      FontSize="{DynamicResource AppFontSizeLarge}" 
                                       FontWeight="Bold" 
                                       Foreground="#0078D4"
                                       Margin="0,0,0,5"/>
+
                             <TextBlock Text="{Binding SelectedDocumentDisplayName}" 
-                                      FontSize="12"
+                                      FontSize="{DynamicResource AppFontSize}"
                                       Foreground="#666666"
                                       TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
@@ -350,16 +780,21 @@
                     <Border Grid.Row="0" 
                            Background="#F3F8FC" 
                            CornerRadius="4" 
-                           Padding="12"
+                           Padding="10, 5, 2, 5"
                            Margin="0,0,0,15">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#0078D4" BlurRadius="5" ShadowDepth="0" Opacity="0.1"/>
+                        </Border.Effect>
                         <StackPanel>
+                            <!-- Nagłówek "Metadane" -->
                             <TextBlock Text="Metadane" 
-                                      FontSize="16" 
+                                      FontSize="{DynamicResource AppFontSizeLarge}" 
                                       FontWeight="Bold" 
                                       Foreground="#0078D4"
                                       Margin="0,0,0,5"/>
+
                             <TextBlock Text="{Binding SelectedMetadataDisplayName}" 
-                                      FontSize="12"
+                                      FontSize="{DynamicResource AppFontSize}"
                                       Foreground="#666666"
                                       TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
@@ -388,7 +823,7 @@
                                         <StackPanel>
                                             <TextBlock Text="{Binding Name}" 
                                                       FontWeight="SemiBold" 
-                                                      FontSize="12"
+                                                      FontSize="{DynamicResource AppFontSize}"
                                                       Foreground="#0078D4"
                                                       Margin="0,0,0,4"/>
                                             <TextBlock Text="{Binding Value}" 

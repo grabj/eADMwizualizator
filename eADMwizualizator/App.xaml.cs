@@ -15,17 +15,17 @@ namespace eADMwizualizator
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            // Ustaw domyślny rozmiar czcionki globalnie przed inicjalizacją okien, żeby Window/MainWindow mogły od razu odczytać zasób.
+            // Ustaw domyślne rozmiary czcionek
             try
             {
-                if (!this.Resources.Contains("AppFontSize") || !(this.Resources["AppFontSize"] is double))
-                {
-                    this.Resources["AppFontSize"] = DefaultFontSize;
-                }
+                const double defaultSize = 13.0;
+                this.Resources["AppFontSize"] = defaultSize;
+                this.Resources["AppFontSizeLarge"] = defaultSize + 4;
+                this.Resources["AppFontSizeBig"] = defaultSize + 2;
             }
             catch
             {
-                // Nie przerywamy uruchamiania aplikacji, ale pozostawiamy fallback.
+                // Fallback
             }
 
             base.OnStartup(e);

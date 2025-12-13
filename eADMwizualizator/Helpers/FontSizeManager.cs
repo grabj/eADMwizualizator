@@ -3,12 +3,13 @@ using System.Windows;
 
 namespace eADMwizualizator.Helpers
 {
-    internal static class FontSizeManager
+    public static class FontSizeManager
     {
         public static void SetAppFontSize(double size)
         {
-            if (Application.Current == null) return;
             Application.Current.Resources["AppFontSize"] = size;
+            Application.Current.Resources["AppFontSizeLarge"] = size + 4;
+            Application.Current.Resources["AppFontSizeBig"] = size + 2;
         }
 
         public static double GetAppFontSize(double defaultSize)

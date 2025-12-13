@@ -545,13 +545,13 @@ namespace eADMwizualizator.ViewModels
         {
             // Szukaj pliku eADM_styl.xsl w katalogu aplikacji
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
-            var xslPath = Path.Combine(appDir, "eADM_styl.xsl");
+            var xslPath = Path.Combine(appDir, "Resources/eADM_styl.xsl");
 
             if (File.Exists(xslPath))
                 return xslPath;
 
             // Alternatywnie szukaj w katalogu roboczy
-            xslPath = Path.Combine(Directory.GetCurrentDirectory(), "eADM_styl.xsl");
+            xslPath = Path.Combine(Directory.GetCurrentDirectory(), "Resources/eADM_styl.xsl");
             if (File.Exists(xslPath))
                 return xslPath;
 

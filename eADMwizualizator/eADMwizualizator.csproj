@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\eADM_ikona.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,9 +21,13 @@
 
   <!-- Kopiowanie pliku XSL do katalogu wyjściowego -->
   <ItemGroup>
-    <Content Include="eADM_styl.xsl">
+    <Content Include="Resources\eADM_styl.xsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\eADM_ikona.ico" />
   </ItemGroup>
 
 </Project>
