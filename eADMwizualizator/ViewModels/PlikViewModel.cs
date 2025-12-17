@@ -78,30 +78,31 @@ namespace eADMwizualizator.ViewModels
             get => _selectedDocumentFile;
             set
             {
-                // SetProperty zwróci false gdy referencja się nie zmieni.
-                // W takim przypadku wymuszamy odświeżenie szczegółów jeśli wartość nie jest null.
                 var changed = SetProperty(ref _selectedDocumentFile, value);
-                if (!changed)
+                
+                // ZAWSZE wykonaj akcję gdy wartość nie jest null, nawet jeśli się nie zmieniła
+                if (value != null)
                 {
-                    if (value != null)
-                    {
-                        SelectedFilePath = value.Sciezka;
-                        UpdateSelectedDocumentDisplayName();
-                        // Wywołanie asynchroniczne żeby nie blokować UI
-                        _ = LoadSelectedDocumentFile();
-                    }
-                    else
-                    {
-                        SelectedFilePath = null;
-                        UpdateSelectedDocumentDisplayName();
-                    }
-                    return;
+                    // Najpierw wyczyść ścieżkę (żeby wymusić zmianę w bindingu)
+                    _selectedFilePath = null;
+                    OnPropertyChanged(nameof(SelectedFilePath));
+                    
+                    // Potem ustaw właściwą ścieżkę
+                    _selectedFilePath = value.Sciezka;
+                    OnPropertyChanged(nameof(SelectedFilePath));
+                    
+                    UpdateSelectedDocumentDisplayName();
+                    
+                    // Wywołanie asynchroniczne żeby nie blokować UI
+                    _ = LoadSelectedDocumentFile();
                 }
-
-                SelectedFilePath = _selectedDocumentFile?.Sciezka;
-                UpdateSelectedDocumentDisplayName();
-                // Wywołanie asynchroniczne żeby nie blokować UI
-                _ = LoadSelectedDocumentFile();
+                else if (changed)
+                {
+                    // Tylko gdy wartość zmienia się na null
+                    _selectedFilePath = null;
+                    OnPropertyChanged(nameof(SelectedFilePath));
+                    UpdateSelectedDocumentDisplayName();
+                }
             }
         }
 

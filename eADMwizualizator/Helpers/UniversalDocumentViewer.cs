@@ -96,6 +96,9 @@ namespace eADMwizualizator.Helpers
 
             try
             {
+                // Najpierw wyczyść zawartość
+                contentControl.Content = null;
+
                 // Obrazy
                 if (Array.IndexOf(ImageExtensions, extension) >= 0)
                 {
@@ -124,18 +127,20 @@ namespace eADMwizualizator.Helpers
                     return;
                 }
 
+                if (extension == ".pdf")
+                {
+                    PdfContentControlExtensions.SetPdfSource(contentControl, filePath);
+                    return;
+                }
+
                 // Dokumenty wyświetlanie przez WebBrowser
-                if (Array.IndexOf(WebBrowserExtensions, extension) >= 0)
+                else
                 {
                     await LoadHtmlFileAsync(contentControl, filePath);
                     return;
                 }
 
-                if(extension == ".pdf")
-                {
-                    PdfContentControlExtensions.SetPdfSource(contentControl, filePath);
-                    return;
-                }
+
 
 
                 ShowUnsupportedMessage(contentControl, $"Nieobsługiwany format: {extension}");
@@ -424,6 +429,20 @@ namespace eADMwizualizator.Helpers
             }
         }
 
+        private static void ShowBlankDocument(ContentControl contentControl)
+        {
+            var textBox = new TextBox
+            {
+                Text = null,
+                IsReadOnly = true,
+                Background = new SolidColorBrush(Color.FromRgb(250, 250, 250)),
+                VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
+                BorderThickness = new Thickness(0)
+            };
+
+            contentControl.Content = textBox;
+        }
         #endregion
 
         #region Komunikaty
@@ -483,20 +502,6 @@ namespace eADMwizualizator.Helpers
             ShowUnsupportedMessage(contentControl, message);
         }
 
-        private static void ShowBlankDocument(ContentControl contentControl)
-        {
-            var textBox = new TextBox
-            {
-                Text = null,
-                IsReadOnly = true,
-                Background = new SolidColorBrush(Color.FromRgb(250, 250, 250)),
-                VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
-                BorderThickness = new Thickness(0)
-            };
-
-            contentControl.Content = textBox;
-        }
 
         #endregion
     }

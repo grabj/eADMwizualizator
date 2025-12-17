@@ -411,7 +411,7 @@
                             <!-- Elementy potomne -->
                             <ItemsPresenter x:Name="ItemsHost"
                                            Grid.Row="1"
-                                           Margin="16,0,0,0"
+                                           Margin="4,0,0,0"
                                            Visibility="Collapsed"/>
                         </Grid>
                         
