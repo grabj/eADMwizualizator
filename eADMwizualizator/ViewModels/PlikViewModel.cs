@@ -28,6 +28,20 @@ namespace eADMwizualizator.ViewModels
             private set => SetProperty(ref _activePackagePath, value);
         }
 
+        private string? _packageName;
+        public string? PackageName
+        {
+            get => _packageName;
+            set
+            {
+                if (_packageName != value)
+                {
+                    _packageName = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         public ObservableCollection<Plik> Dokumenty { get; } = new ObservableCollection<Plik>();
         public ObservableCollection<Plik> Sprawy { get; } = new ObservableCollection<Plik>();
         public ObservableCollection<Plik> Metadane { get; } = new ObservableCollection<Plik>();
@@ -147,6 +161,41 @@ namespace eADMwizualizator.ViewModels
         {
             get => _metadataHtmlContent;
             private set => SetProperty(ref _metadataHtmlContent, value ?? string.Empty);
+        }
+
+        private SprawaNode? _selectedSprawaNode;
+        public SprawaNode? SelectedSprawaNode
+        {
+            get => _selectedSprawaNode;
+            set
+            {
+                var changed = SetProperty(ref _selectedSprawaNode, value);
+                
+                // ZAWSZE wykonaj akcję gdy wartość nie jest null, nawet jeśli się nie zmieniła
+                if (value != null)
+                {
+                    // Po wybraniu węzła sprawy:
+                    // 1. Wymuś wyczyszczenie dokumentu (środkowy panel)
+                    _selectedDocumentFile = null;
+                    OnPropertyChanged(nameof(SelectedDocumentFile));
+                    
+                    // Ustaw specjalną ścieżkę dla pustego widoku
+                    _selectedFilePath = "about:blank";
+                    OnPropertyChanged(nameof(SelectedFilePath));
+                    
+                    SelectedDocumentDisplayName = string.Empty;
+
+                    // 2. Załaduj metadane sprawy (prawy panel)
+                    LoadSelectedSprawaMetadata();
+                }
+                else if (changed)
+                {
+                    // Tylko gdy wartość zmienia się na null
+                    _selectedFilePath = null;
+                    OnPropertyChanged(nameof(SelectedFilePath));
+                    SelectedDocumentDisplayName = string.Empty;
+                }
+            }
         }
 
         #endregion
@@ -663,6 +712,53 @@ namespace eADMwizualizator.ViewModels
                     }
                 }
             }
+        }
+
+        private void LoadSelectedSprawaMetadata()
+        {
+            SelectedMetadata.Clear();
+            MetadataHtmlContent = string.Empty;
+
+            if (_selectedSprawaNode?.Sprawa == null)
+            {
+                SelectedMetadataDisplayName = string.Empty;
+                return;
+            }
+
+            var sprawaFile = _selectedSprawaNode.Sprawa;
+            var metaFilePath = sprawaFile.Sciezka;
+
+            if (string.IsNullOrEmpty(metaFilePath) || !File.Exists(metaFilePath))
+            {
+                SelectedMetadata.Add(new MetadataEntry { Name = "Info", Value = "Plik metadanych sprawy niedostępny." });
+                SelectedMetadataDisplayName = string.Empty;
+                return;
+            }
+
+            try
+            {
+                // Znajdź plik XSL
+                var xslPath = FindXslFile();
+
+                if (!string.IsNullOrEmpty(xslPath) && File.Exists(xslPath))
+                {
+                    // Wykonaj transformację
+                    var htmlContent = XslTransformer.TransformXmlToHtml(metaFilePath, xslPath);
+                    MetadataHtmlContent = htmlContent;
+                }
+                else
+                {
+                    // Fallback: załaduj jako proste pary klucz-wartość
+                    var entries = MetadataLoader.LoadMetadataEntries(metaFilePath);
+                    foreach (var e in entries) SelectedMetadata.Add(e);
+                }
+            }
+            catch (Exception ex)
+            {
+                SelectedMetadata.Add(new MetadataEntry { Name = "Błąd", Value = ex.Message });
+            }
+
+            SelectedMetadataDisplayName = Path.GetFileName(metaFilePath);
         }
 
         #endregion

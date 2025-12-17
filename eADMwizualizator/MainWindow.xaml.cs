@@ -79,6 +79,13 @@ namespace eADMwizualizator
                     }
                 }
             }
+            else if (e.PropertyName == nameof(PlikViewModel.PackageName))
+            {
+                if (sender is PlikViewModel vm)
+                {
+                    UpdateWindowTitle(vm.PackageName);
+                }
+            }
         }
 
         private void UpdateWindowTitle(string? packageName)
@@ -148,6 +155,7 @@ namespace eADMwizualizator
             try
             {
                 await vm.LoadDirectoryFromArchiveAsync(picker.FileName);
+                vm.PackageName = Path.GetFileNameWithoutExtension(picker.FileName);
             }
             catch (Exception ex)
             {
@@ -189,15 +197,15 @@ namespace eADMwizualizator
             var selected = e.NewValue;
             if (this.DataContext is not PlikViewModel mainVm) return;
 
+            // Jeżeli kliknięto węzeł sprawy (SprawaNode) — wyczyść dokument, pokaż metadane sprawy
+            if (selected is SprawaNode sprawaNode)
+            {
+                mainVm.SelectedSprawaNode = sprawaNode;
+            }
             // Jeżeli kliknięto dokument (Plik) — ustaw SelectedDocumentFile w ViewModel
-            if (selected is Plik doc)
+            else if (selected is Plik doc)
             {
                 mainVm.SelectedDocumentFile = doc;
-            }
-            // Jeżeli kliknięto węzeł sprawy — ustaw SelectedMetadataFile na odpowiadający plik sprawy (Sprawa)
-            else if (selected is SprawaNode node)
-            {
-                mainVm.SelectedMetadataFile = node.Sprawa;
             }
         }
     }

@@ -136,7 +136,6 @@
 
         <!-- 4. Style przycisków - ROZJAŚNIONE KOLORY -->
         <Style x:Key="ModernButtonStyle" TargetType="Button">
-            <!-- Jaśniejszy, bardziej żywy niebieski -->
             <Setter Property="Background" Value="#2196F3"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -168,38 +167,14 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <!-- Średni niebieski przy hover -->
                     <Setter Property="Background" Value="#FF1767B7"/>
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <!-- Ciemniejszy niebieski przy kliknięciu -->
                     <Setter Property="Background" Value="#0D47A1"/>
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="Background" Value="#BBDEFB"/>
                     <Setter Property="Foreground" Value="#90A4AE"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- Przycisk akcji - NAJJAŚNIEJSZY ŻÓŁTY -->
-        <Style x:Key="ActionButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
-            <!-- Najjaśniejszy, energiczny żółty -->
-            <Setter Property="Background" Value="#FFEB3B"/>
-            <Setter Property="Foreground" Value="#212121"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <!-- Złoty przy hover -->
-                    <Setter Property="Background" Value="#FDD835"/>
-                </Trigger>
-                <Trigger Property="IsPressed" Value="True">
-                    <!-- Bursztynowy przy kliknięciu -->
-                    <Setter Property="Background" Value="#FBC02D"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#FFF9C4"/>
-                    <Setter Property="Foreground" Value="#BDBDBD"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -291,7 +266,7 @@
             <Setter Property="FontSize" Value="{DynamicResource AppFontSize}"/>
         </Style>
 
-        <!-- Styl dla ListBoxItem (Fluent Design) - POPRAWIONY -->
+        <!-- Styl dla ListBoxItem (Fluent Design)-->
         <Style x:Key="FluentListBoxItemStyle" TargetType="ListBoxItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -303,7 +278,7 @@
                                BorderThickness="0"
                                CornerRadius="4"
                                Margin="4,2">
-                            <!-- ZMIANA: Usunięto sztywny Padding, używamy dynamicznego -->
+                            <!-- Padding dynamiczny -->
                             <ContentPresenter Margin="8,4"
                                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
@@ -330,8 +305,9 @@
             </Setter>
         </Style>
 
-        <!-- Styl dla TreeViewItem (Fluent Design) - POPRAWIONY -->
+        <!-- Styl dla TreeViewItem (Fluent Design) -->
         <Style x:Key="FluentTreeViewItemStyle" TargetType="TreeViewItem">
+            <Setter Property="IsExpanded" Value="True"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -358,7 +334,7 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     
-                                    <!-- Toggle button (strzałka rozwijania) -->
+                                    <!-- Toggle button -->
                                     <ToggleButton x:Name="Expander"
                                                 Grid.Column="0"
                                                 IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
@@ -422,7 +398,7 @@
                                         </ToggleButton.Template>
                                     </ToggleButton>
                                     
-                                    <!-- Zawartość elementu - ZMIANA: Dynamiczny padding -->
+                                    <!-- Dynamiczny padding -->
                                     <ContentPresenter x:Name="PART_Header"
                                                     Grid.Column="1"
                                                     ContentSource="Header"
@@ -432,7 +408,7 @@
                                 </Grid>
                             </Border>
                             
-                            <!-- Elementy potomne (dzieci) -->
+                            <!-- Elementy potomne -->
                             <ItemsPresenter x:Name="ItemsHost"
                                            Grid.Row="1"
                                            Margin="16,0,0,0"
@@ -506,7 +482,7 @@
                 <Button Grid.Column="0"
                         Content="📦 Otwórz paczkę eADM" 
                         Click="OtworzPaczke_Click" 
-                        Style="{StaticResource ActionButtonStyle}"
+                        Style="{StaticResource ModernButtonStyle}"
                         Height="40"
                         MinWidth="180"
                         HorizontalAlignment="Left"/>
@@ -520,7 +496,7 @@
                               Foreground="#666666"
                               Margin="0,0,10,0"/>
                     
-                    <!-- ZAKTUALIZOWANY: Nowoczesny slider -->
+                    <!-- Nowoczesny slider -->
                     <Slider x:Name="FontSizeSlider" 
                            Minimum="10" 
                            Maximum="22" 
@@ -645,7 +621,13 @@
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Tytul}" 
                                                   FontSize="{DynamicResource AppFontSize}"
-                                                  TextTrimming="CharacterEllipsis"/>
+                                                  TextTrimming="CharacterEllipsis">
+                                            <TextBlock.ToolTip>
+                                                <TextBlock>
+                                                    <Run Text="{Binding Tytul, Mode=OneWay}"/>
+                                                </TextBlock>
+                                            </TextBlock.ToolTip>
+                                        </TextBlock>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
@@ -674,14 +656,17 @@
                                 
                                 <TreeView.ItemTemplate>
                                     <HierarchicalDataTemplate ItemsSource="{Binding Documents}">
-                                        <TextBlock Text="{Binding DisplayName}" 
-                                                  FontWeight="Bold"
-                                                  FontSize="{DynamicResource AppFontSize}"/>
+                                        <TextBlock Text="{Binding Key}" 
+                                                  Typography.Capitals="AllSmallCaps"
+                                                  Typography.Kerning="True"
+                                                  FontSize="{DynamicResource AppFontSizeBig}"
+                                                  ToolTip="{Binding DisplayName}"/>
                                         <HierarchicalDataTemplate.ItemTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Tytul}"
                                                           FontSize="{DynamicResource AppFontSize}"
-                                                          TextTrimming="CharacterEllipsis"/>
+                                                          TextTrimming="CharacterEllipsis"
+                                                          ToolTip="{Binding Tytul}"/>
                                             </DataTemplate>
                                         </HierarchicalDataTemplate.ItemTemplate>
                                     </HierarchicalDataTemplate>
@@ -709,7 +694,8 @@
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Tytul}" 
                                                   FontSize="{DynamicResource AppFontSize}"
-                                                  TextTrimming="CharacterEllipsis"/>
+                                                  TextTrimming="CharacterEllipsis"
+                                                  ToolTip="{Binding Tytul}"/>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
@@ -758,7 +744,8 @@
 
                     <!-- Zawartość dokumentu -->
                     <ContentControl Grid.Row="1" 
-                                   helpers:UniversalDocumentViewer.DocumentSource="{Binding SelectedFilePath}"/>
+                       helpers:UniversalDocumentViewer.DocumentSource="{Binding SelectedFilePath}"
+                       helpers:UniversalDocumentViewer.TextFontSize="{Binding ElementName=FontSizeSlider, Path=Value}"/>
                 </Grid>
             </Border>
 

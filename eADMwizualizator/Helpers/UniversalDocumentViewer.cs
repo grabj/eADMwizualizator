@@ -14,9 +14,10 @@ namespace eADMwizualizator.Helpers
     public static class UniversalDocumentViewer
     {
         private static readonly string[] ImageExtensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif", ".ico" };
-        private static readonly string[] XmlExtensions = { ".xml", ".xades" };
-        private static readonly string[] TextExtensions = { ".txt", ".log", ".csv", ".json", ".html", ".htm", ".css", ".js", ".md" };
-        private static readonly string[] OfficeDocumentExtensions = { ".doc", ".docx", ".odt", ".ppt", ".pptx", ".odp" };
+        private static readonly string[] XmlExtensions = { ".xml", ".xades", ".xsl"};
+        private static readonly string[] TextExtensions = { ".txt", ".log", ".md", ".js", ".css", ".json" };
+        private static readonly string[] OfficeDocumentExtensions = { ".doc", ".docx", ".odt", ".ppt", ".pptx", ".odp", ".xls", ".xlsx", ".csv" };
+        private static readonly string[] WebBrowserExtensions = { ".html",".htm" };
 
         public static readonly DependencyProperty DocumentSourceProperty =
             DependencyProperty.RegisterAttached(
@@ -24,6 +25,13 @@ namespace eADMwizualizator.Helpers
                 typeof(string),
                 typeof(UniversalDocumentViewer),
                 new PropertyMetadata(null, OnDocumentSourceChanged));
+
+        public static readonly DependencyProperty TextFontSizeProperty =
+            DependencyProperty.RegisterAttached(
+                "TextFontSize",
+                typeof(double),
+                typeof(UniversalDocumentViewer),
+                new PropertyMetadata(13.0, OnTextFontSizeChanged));
 
         public static string GetDocumentSource(DependencyObject obj)
         {
@@ -33,6 +41,32 @@ namespace eADMwizualizator.Helpers
         public static void SetDocumentSource(DependencyObject obj, string value)
         {
             obj.SetValue(DocumentSourceProperty, value);
+        }
+
+        public static double GetTextFontSize(DependencyObject obj)
+        {
+            return (double)obj.GetValue(TextFontSizeProperty);
+        }
+
+        public static void SetTextFontSize(DependencyObject obj, double value)
+        {
+            obj.SetValue(TextFontSizeProperty, value);
+        }
+
+        private static void OnTextFontSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ContentControl contentControl && e.NewValue is double fontSize)
+            {
+                UpdateTextControlFontSize(contentControl, fontSize);
+            }
+        }
+
+        private static void UpdateTextControlFontSize(ContentControl contentControl, double fontSize)
+        {
+            if (contentControl.Content is TextBox textBox)
+            {
+                textBox.FontSize = fontSize;
+            }
         }
 
         private static async void OnDocumentSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -45,7 +79,14 @@ namespace eADMwizualizator.Helpers
 
         private static async Task LoadDocumentAsync(ContentControl contentControl, string filePath)
         {
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            // Obsługa specjalnych wartości dla pustego widoku
+            if (string.IsNullOrEmpty(filePath) || filePath == "about:blank")
+            {
+                ShowBlankDocument(contentControl);
+                return;
+            }
+            
+            if (!File.Exists(filePath))
             {
                 contentControl.Content = null;
                 return;
@@ -83,12 +124,19 @@ namespace eADMwizualizator.Helpers
                     return;
                 }
 
-                // Dokumenty PDF
-                else
+                // Dokumenty wyświetlanie przez WebBrowser
+                if (Array.IndexOf(WebBrowserExtensions, extension) >= 0)
+                {
+                    await LoadHtmlFileAsync(contentControl, filePath);
+                    return;
+                }
+
+                if(extension == ".pdf")
                 {
                     PdfContentControlExtensions.SetPdfSource(contentControl, filePath);
                     return;
                 }
+
 
                 ShowUnsupportedMessage(contentControl, $"Nieobsługiwany format: {extension}");
             }
@@ -145,15 +193,19 @@ namespace eADMwizualizator.Helpers
                 // Odczyt pliku asynchronicznie
                 string content = await Task.Run(() => File.ReadAllText(textFilePath, DetectEncoding(textFilePath)));
 
+                // Pobierz aktualny rozmiar czcionki z właściwości zależnej
+                double fontSize = GetTextFontSize(contentControl);
+
                 // TextBox z obsługą przewijania i kopiowania
                 var textBox = new TextBox
                 {
                     Text = content,
                     IsReadOnly = true,
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                     TextWrapping = TextWrapping.Wrap,
                     FontFamily = new FontFamily("Tahoma, Consolas, Courier New"),
+                    FontSize = fontSize,
                     Padding = new Thickness(10),
                     BorderThickness = new Thickness(0)
                 };
@@ -265,7 +317,6 @@ namespace eADMwizualizator.Helpers
                     var treeView = new TreeView
                     {
                         FontFamily = new FontFamily("Consolas, Courier New"),
-                        //FontSize = 13
                     };
 
                     var rootItem = CreateTreeItem(doc.Root, true);
@@ -275,7 +326,7 @@ namespace eADMwizualizator.Helpers
                     var scrollViewer = new ScrollViewer
                     {
                         HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-                        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                        VerticalScrollBarVisibility = ScrollBarVisibility.Visible,  // Zmieniono z Auto na Visible
                         Content = treeView
                     };
 
@@ -345,6 +396,36 @@ namespace eADMwizualizator.Helpers
 
         #endregion
 
+        #region Obsługa plików HTML
+
+        private static async Task LoadHtmlFileAsync(ContentControl contentControl, string htmlPath)
+        {
+            try
+            {
+                var webBrowser = new WebBrowser
+                {
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Stretch
+                };
+
+                await Task.Run(() =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        webBrowser.Navigate(new Uri(htmlPath, UriKind.Absolute));
+                    });
+                });
+
+                contentControl.Content = webBrowser;
+            }
+            catch (Exception ex)
+            {
+                ShowErrorMessage(contentControl, $"Nie można załadować pliku HTML: {ex.Message}");
+            }
+        }
+
+        #endregion
+
         #region Komunikaty
 
         private static string GetDocumentTypeName(string extension)
@@ -357,6 +438,8 @@ namespace eADMwizualizator.Helpers
                 ".odp" => "prezentacji ODP",
                 ".xml" => "pliku XML",
                 ".xades" => "pliku XAdES",
+                ".xls" or ".xlsx" => "arkusza Excel",
+                ".csv" => "pliku CSV",
                 _ => "dokumentu"
             };
         }
@@ -398,6 +481,21 @@ namespace eADMwizualizator.Helpers
         private static void ShowErrorMessage(ContentControl contentControl, string message)
         {
             ShowUnsupportedMessage(contentControl, message);
+        }
+
+        private static void ShowBlankDocument(ContentControl contentControl)
+        {
+            var textBox = new TextBox
+            {
+                Text = null,
+                IsReadOnly = true,
+                Background = new SolidColorBrush(Color.FromRgb(250, 250, 250)),
+                VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
+                BorderThickness = new Thickness(0)
+            };
+
+            contentControl.Content = textBox;
         }
 
         #endregion
