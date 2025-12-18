@@ -9,6 +9,7 @@
         mc:Ignorable="d"
         Title="Wizualizator paczki eADM" 
         Height="900" Width="1600"
+        WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
         Icon="Resources/eADM_ikona.ico"
         TextOptions.TextFormattingMode="Display"
@@ -767,62 +768,93 @@
                     <Border Grid.Row="0" 
                            Background="#F3F8FC" 
                            CornerRadius="4" 
-                           Padding="10, 5, 2, 5"
+                           Padding="10, 5, 10, 5"
                            Margin="0,0,0,15">
                         <Border.Effect>
                             <DropShadowEffect Color="#0078D4" BlurRadius="5" ShadowDepth="0" Opacity="0.1"/>
                         </Border.Effect>
-                        <StackPanel>
-                            <!-- Nagłówek "Metadane" -->
-                            <TextBlock Text="Metadane" 
-                                      FontSize="{DynamicResource AppFontSizeLarge}" 
-                                      FontWeight="Bold" 
-                                      Foreground="#0078D4"
-                                      Margin="0,0,0,5"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Lewa strona - teksty -->
+                            <StackPanel Grid.Column="0">
+                                <!-- Nagłówek "Metadane" -->
+                                <TextBlock Text="Metadane" 
+                                          FontSize="{DynamicResource AppFontSizeLarge}" 
+                                          FontWeight="Bold" 
+                                          Foreground="#0078D4"
+                                          Margin="0,0,0,5"/>
 
-                            <TextBlock Text="{Binding SelectedMetadataDisplayName}" 
-                                      FontSize="{DynamicResource AppFontSize}"
-                                      Foreground="#666666"
-                                      TextTrimming="CharacterEllipsis"/>
-                        </StackPanel>
-                    </Border>
+                                <TextBlock Text="{Binding SelectedMetadataDisplayName}" 
+                                          FontSize="{DynamicResource AppFontSize}"
+                                          Foreground="#666666"
+                                          TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                            
+                            <!-- Prawa strona - przycisk drukowania -->
+                            <Button x:Name="PrintMetadataButton"
+                                   Grid.Column="1"
+                                   Content="🖨️"
+                                   Click="PrintMetadata_Click"
+                                   Style="{StaticResource ModernButtonStyle}"
+                                   Width="38"
+                                   Height="38"
+                                   FontSize="18"
+                                   Padding="0"
+                                   ToolTip="Drukuj metadane"
+                                   VerticalAlignment="Center"
+                                   Cursor="Hand"
+                                   IsEnabled="False">
+    <Button.Effect>
+        <DropShadowEffect Color="#000000" 
+                         BlurRadius="6" 
+                         ShadowDepth="2" 
+                         Direction="270"
+                         Opacity="0.25"/>
+    </Button.Effect>
+</Button>
+    </Grid>
+</Border>
 
-                    <!-- Zawartość metadanych -->
-                    <Grid Grid.Row="1">
-                        <!-- WebBrowser dla HTML -->
-                        <WebBrowser x:Name="MetadataWebBrowser" 
-                                   helpers:WebBrowserHelper.Html="{Binding MetadataHtmlContent}"
-                                   Visibility="Collapsed"
-                                   d:IsHidden="True"/>
+<!-- Zawartość metadanych -->
+<Grid Grid.Row="1">
+    <!-- WebBrowser dla HTML -->
+    <WebBrowser x:Name="MetadataWebBrowser" 
+               helpers:WebBrowserHelper.Html="{Binding MetadataHtmlContent}"
+               Visibility="Collapsed"
+               d:IsHidden="True"/>
 
-                        <!-- ListView dla surowych metadanych -->
-                        <ListView x:Name="Metadata_List" 
-                                 ItemsSource="{Binding SelectedMetadata}"
-                                 BorderThickness="0"
-                                 Background="White"
-                                 Visibility="Visible">
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="#F9F9F9" 
-                                           CornerRadius="4" 
-                                           Padding="10" 
-                                           Margin="0,0,0,8">
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Name}" 
-                                                      FontWeight="SemiBold" 
-                                                      FontSize="{DynamicResource AppFontSize}"
-                                                      Foreground="#0078D4"
-                                                      Margin="0,0,0,4"/>
-                                            <TextBlock Text="{Binding Value}" 
-                                                      TextWrapping="Wrap"
-                                                      FontSize="{DynamicResource AppFontSize}"
-                                                      Foreground="#333333"/>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-                    </Grid>
+    <!-- ListView dla surowych metadanych -->
+    <ListView x:Name="Metadata_List" 
+             ItemsSource="{Binding SelectedMetadata}"
+             BorderThickness="0"
+             Background="White"
+             Visibility="Visible">
+        <ListView.ItemTemplate>
+            <DataTemplate>
+                <Border Background="#F9F9F9" 
+                       CornerRadius="4" 
+                       Padding="10" 
+                       Margin="0,0,0,8">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Name}" 
+                                  FontWeight="SemiBold" 
+                                  FontSize="{DynamicResource AppFontSize}"
+                                  Foreground="#0078D4"
+                                  Margin="0,0,0,4"/>
+                        <TextBlock Text="{Binding Value}" 
+                                  TextWrapping="Wrap"
+                                  FontSize="{DynamicResource AppFontSize}"
+                                  Foreground="#333333"/>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+        </ListView.ItemTemplate>
+    </ListView>
+</Grid>
                 </Grid>
             </Border>
         </Grid>

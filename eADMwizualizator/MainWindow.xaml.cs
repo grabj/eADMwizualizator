@@ -72,6 +72,9 @@ namespace eADMwizualizator
                     MetadataWebBrowser.Visibility = hasHtml ? Visibility.Visible : Visibility.Collapsed;
                     Metadata_List.Visibility = hasHtml ? Visibility.Collapsed : Visibility.Visible;
                     
+                    // WAŻNE: Włącz/wyłącz przycisk drukowania
+                    PrintMetadataButton.IsEnabled = hasHtml;
+                    
                     // Ustaw HTML bezpośrednio
                     if (hasHtml)
                     {
@@ -208,5 +211,52 @@ namespace eADMwizualizator
                 mainVm.SelectedDocumentFile = doc;
             }
         }
+
+        #region Drukowanie metadanych
+        
+        private void PrintMetadata_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (MetadataWebBrowser.Visibility == Visibility.Visible)
+                {
+                    // Rozwiń zaawansowane metadane
+                    ExpandAdvancedMetadata();
+                    System.Threading.Thread.Sleep(300);
+                    
+                    // Wywołaj podgląd wydruku przez WebBrowserHelper
+                    if (!WebBrowserHelper.ShowPrintPreview(MetadataWebBrowser))
+                    {
+                        MessageBox.Show(
+                            "Nie można uruchomić podglądu wydruku.\n\nSpróbuj użyć prawego przycisku myszy na dokumencie.", 
+                            "Informacja", 
+                            MessageBoxButton.OK, 
+                            MessageBoxImage.Information);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Błąd podglądu wydruku: {ex.Message}", "Błąd", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ExpandAdvancedMetadata()
+        {
+            var script = @"
+                var buttons = document.getElementsByClassName('collapsible');
+                for (var i = 0; i < buttons.length; i++) {
+                    var content = buttons[i].nextElementSibling;
+                    if (content && !content.classList.contains('show')) {
+                        content.classList.add('show');
+                        buttons[i].classList.add('active');
+                    }
+                }
+            ";
+            WebBrowserHelper.ExecuteScript(MetadataWebBrowser, script);
+        }
+
+        #endregion
     }
 }
