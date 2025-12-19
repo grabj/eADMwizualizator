@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -32,111 +31,50 @@ namespace eADMwizualizator.Helpers
         }
 
         /// <summary>
-        /// Pokazuje podgl¹d wydruku dla kontrolki WebBrowser
+        /// Wykonuje skrypt JavaScript w WebBrowser.
         /// </summary>
-        public static bool ShowPrintPreview(WebBrowser? browser)
+        public static void ExecuteScript(WebBrowser browser, string script)
         {
-            if (browser == null)
-            {
-                System.Diagnostics.Debug.WriteLine("WebBrowser is null");
-                return false;
-            }
-
-            if (browser.Document == null)
-            {
-                System.Diagnostics.Debug.WriteLine("WebBrowser.Document is null");
-                return false;
-            }
-
             try
             {
-                // Pobierz dokument jako dynamic
-                dynamic doc = browser.Document;
+                browser.InvokeScript("eval", script);
+            }
+            catch
+            {
+                // Ignoruj b³êdy
+            }
+        }
 
-                // Metoda 1: IOleCommandTarget (najbardziej niezawodna dla WPF WebBrowser)
-                try
-                {
-                    System.Diagnostics.Debug.WriteLine("Próba metody IOleCommandTarget...");
-                    
-                    object docObject = doc;
-                    if (docObject is IOleCommandTarget cmdTarget)
-                    {
-                        const int OLECMDID_PRINTPREVIEW = 7;
-                        const int OLECMDEXECOPT_DODEFAULT = 0;
-                        
-                        Guid cmdGroup = Guid.Empty;
-                        object? input = null;
-                        object? output = null;
-                        
-                        int result = cmdTarget.Exec(
-                            ref cmdGroup,
-                            OLECMDID_PRINTPREVIEW,
-                            OLECMDEXECOPT_DODEFAULT,
-                            ref input,
-                            ref output);
-                        return true;
-                    }
-                }
-                catch { }
+        /// <summary>
+        /// Wyœwietla okno podgl¹du wydruku.
+        /// </summary>
+        public static bool ShowPrintPreview(WebBrowser browser)
+        {
+            try
+            {
+                browser.InvokeScript("execScript", "window.print();", "JavaScript");
+                return true;
+            }
+            catch
+            {
+                return Print(browser);
+            }
+        }
 
-                // Metoda 3: Fallback do standardowego drukowania
-                try
-                {
-                    doc.execCommand("Print", false, null);
-                    return true;
-                }
-                catch { }
-
-                return false;
+        /// <summary>
+        /// Drukuje zawartoœæ WebBrowser.
+        /// </summary>
+        public static bool Print(WebBrowser browser)
+        {
+            try
+            {
+                browser.InvokeScript("print");
+                return true;
             }
             catch
             {
                 return false;
             }
         }
-
-        /// <summary>
-        /// Wykonuje skrypt JavaScript w kontrolce WebBrowser
-        /// </summary>
-        public static void ExecuteScript(WebBrowser browser, string script)
-        {
-            try
-            {
-                browser?.InvokeScript("execScript", new object[] { script, "JavaScript" });
-            }
-            catch { }
-        }
-
-        #region COM Interop
-
-        [ComImport]
-        [Guid("B722BCCB-4E68-101B-A2BC-00AA00404770")]
-        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-        private interface IOleCommandTarget
-        {
-            [PreserveSig]
-            int QueryStatus(
-                ref Guid pguidCmdGroup,
-                uint cCmds,
-                [MarshalAs(UnmanagedType.LPArray)] OLECMD[] prgCmds,
-                IntPtr pCmdText);
-
-            [PreserveSig]
-            int Exec(
-                ref Guid pguidCmdGroup,
-                uint nCmdID,
-                uint nCmdexecopt,
-                ref object? pvaIn,
-                ref object? pvaOut);
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct OLECMD
-        {
-            public uint cmdID;
-            public uint cmdf;
-        }
-
-        #endregion
     }
 }

@@ -175,7 +175,7 @@
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="Background" Value="#BBDEFB"/>
-                    <Setter Property="Foreground" Value="#90A4AE"/>
+                    <Setter Property="Foreground" Value="#FF838E94"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -518,13 +518,14 @@
                               Width="25"
                               TextAlignment="Center"
                               Margin="0,0,10,0"/>
-                    
+
                     <Button Content="↺" 
                            Click="ResetFont_Click" 
                            Style="{StaticResource ModernButtonStyle}"
                             FontSize="{DynamicResource AppFontSizeBig}"
                            ToolTip="Reset rozmiaru czcionki"
                            Width="40"
+                           Height="40"
                            Padding="0"/>
                 </StackPanel>
             </Grid>
@@ -533,11 +534,11 @@
         <!-- Główna zawartość z GridSplitterami -->
         <Grid Grid.Row="1" Margin="15">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300" MinWidth="200"/>
+                <ColumnDefinition Width="350" MinWidth="200" MaxWidth="600"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*" MinWidth="400"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="350" MinWidth="250" MaxWidth="600"/>
+                <ColumnDefinition Width="400" MinWidth="250" MaxWidth="600"/>
             </Grid.ColumnDefinitions>
 
             <!-- Lewy panel - Nawigacja -->
@@ -675,7 +676,7 @@
                             </TreeView>
                         </TabItem>
     
-                        <TabItem Style="{StaticResource ModernTabItemStyle}">
+                        <!--<TabItem Style="{StaticResource ModernTabItemStyle}">
                             <TabItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="🏷️" 
@@ -700,7 +701,7 @@
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
-                        </TabItem>
+                        </TabItem>-->
                     </TabControl>
                 </Grid>
             </Border>
@@ -797,64 +798,64 @@
                             <!-- Prawa strona - przycisk drukowania -->
                             <Button x:Name="PrintMetadataButton"
                                    Grid.Column="1"
-                                   Content="🖨️"
+                                   Content="🖨"
                                    Click="PrintMetadata_Click"
                                    Style="{StaticResource ModernButtonStyle}"
-                                   Width="38"
-                                   Height="38"
-                                   FontSize="18"
+                                   Width="40"
+                                   Height="40"
+                                   FontSize="{DynamicResource AppFontSizeLarge}"
                                    Padding="0"
                                    ToolTip="Drukuj metadane"
                                    VerticalAlignment="Center"
                                    Cursor="Hand"
                                    IsEnabled="False">
-    <Button.Effect>
-        <DropShadowEffect Color="#000000" 
-                         BlurRadius="6" 
-                         ShadowDepth="2" 
-                         Direction="270"
-                         Opacity="0.25"/>
-    </Button.Effect>
-</Button>
-    </Grid>
-</Border>
+                                <Button.Effect>
+                                    <DropShadowEffect Color="#000000" 
+                                                     BlurRadius="6" 
+                                                     ShadowDepth="2" 
+                                                     Direction="270"
+                                                     Opacity="0.25"/>
+                                </Button.Effect>
+                            </Button>
+                        </Grid>
+                    </Border>
 
-<!-- Zawartość metadanych -->
-<Grid Grid.Row="1">
-    <!-- WebBrowser dla HTML -->
-    <WebBrowser x:Name="MetadataWebBrowser" 
-               helpers:WebBrowserHelper.Html="{Binding MetadataHtmlContent}"
-               Visibility="Collapsed"
-               d:IsHidden="True"/>
+                    <!-- Zawartość metadanych -->
+                    <Grid Grid.Row="1">
+                        <!-- WebBrowser dla HTML -->
+                        <WebBrowser x:Name="MetadataWebBrowser" 
+                                   helpers:WebBrowserHelper.Html="{Binding MetadataHtmlContent}"
+                                   Visibility="Collapsed"
+                                   d:IsHidden="True"/>
 
-    <!-- ListView dla surowych metadanych -->
-    <ListView x:Name="Metadata_List" 
-             ItemsSource="{Binding SelectedMetadata}"
-             BorderThickness="0"
-             Background="White"
-             Visibility="Visible">
-        <ListView.ItemTemplate>
-            <DataTemplate>
-                <Border Background="#F9F9F9" 
-                       CornerRadius="4" 
-                       Padding="10" 
-                       Margin="0,0,0,8">
-                    <StackPanel>
-                        <TextBlock Text="{Binding Name}" 
-                                  FontWeight="SemiBold" 
-                                  FontSize="{DynamicResource AppFontSize}"
-                                  Foreground="#0078D4"
-                                  Margin="0,0,0,4"/>
-                        <TextBlock Text="{Binding Value}" 
-                                  TextWrapping="Wrap"
-                                  FontSize="{DynamicResource AppFontSize}"
-                                  Foreground="#333333"/>
-                    </StackPanel>
-                </Border>
-            </DataTemplate>
-        </ListView.ItemTemplate>
-    </ListView>
-</Grid>
+                        <!-- ListView dla surowych metadanych -->
+                        <ListView x:Name="Metadata_List" 
+                                 ItemsSource="{Binding SelectedMetadata}"
+                                 BorderThickness="0"
+                                 Background="White"
+                                 Visibility="Visible">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#F9F9F9" 
+                                           CornerRadius="4" 
+                                           Padding="10" 
+                                           Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" 
+                                                      FontWeight="SemiBold" 
+                                                      FontSize="{DynamicResource AppFontSize}"
+                                                      Foreground="#0078D4"
+                                                      Margin="0,0,0,4"/>
+                                            <TextBlock Text="{Binding Value}" 
+                                                      TextWrapping="Wrap"
+                                                      FontSize="{DynamicResource AppFontSize}"
+                                                      Foreground="#333333"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

@@ -55,7 +55,7 @@ namespace eADMwizualizator.ViewModels
 
         public ICommand SelectViewCommand { get; private set; }
 
-        private int _activeTabIndex;
+        private int _activeTabIndex = 1; //zakładka sprawy domyślnie
         public int ActiveTabIndex
         {
             get => _activeTabIndex;

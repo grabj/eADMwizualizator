@@ -18,7 +18,7 @@ namespace eADMwizualizator
         private const double MaxFontSize = 22.0;
         
         // Próg szerokości po którym ukrywamy tekst w zakładkach (w pikselach)
-        private const double TabTextVisibilityThreshold = 240.0; // Zmień szerokość progu
+        private const double TabTextVisibilityThreshold = 220.0; // Zmień szerokość progu
 
         public MainWindow()
         {
@@ -126,7 +126,7 @@ namespace eADMwizualizator
 
                 // Oblicz czy powinien być widoczny tekst
                 // Formuła: szerokość < próg LUB rozmiar czcionki > 20
-                bool shouldHideText = availableWidth < TabTextVisibilityThreshold || fontSizeLarge > 19; // Zmień próg czcionki
+                bool shouldHideText = availableWidth < TabTextVisibilityThreshold || fontSizeLarge > 20; // Zmień próg czcionki
 
                 // Znajdź TextBlocki z tekstem w nagłówkach zakładek
                 var dokumentyText = this.FindName("DokumentyText") as System.Windows.Controls.TextBlock;
