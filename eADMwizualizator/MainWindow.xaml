@@ -140,7 +140,8 @@
             <Setter Property="Background" Value="#2196F3"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="0"/>
             <Setter Property="FontSize" Value="{DynamicResource AppFontSize}"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -267,7 +268,7 @@
             <Setter Property="FontSize" Value="{DynamicResource AppFontSize}"/>
         </Style>
 
-        <!-- Styl dla ListBoxItem (Fluent Design)-->
+        <!-- Styl dla ListBoxItem -->
         <Style x:Key="FluentListBoxItemStyle" TargetType="ListBoxItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -306,7 +307,7 @@
             </Setter>
         </Style>
 
-        <!-- Styl dla TreeViewItem (Fluent Design) -->
+        <!-- Styl dla TreeViewItem -->
         <Style x:Key="FluentTreeViewItemStyle" TargetType="TreeViewItem">
             <Setter Property="IsExpanded" Value="True"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -484,8 +485,8 @@
                         Content="📦 Otwórz paczkę eADM" 
                         Click="OtworzPaczke_Click" 
                         Style="{StaticResource ModernButtonStyle}"
-                        Height="40"
                         MinWidth="180"
+                        Padding="5,0"
                         HorizontalAlignment="Left"/>
 
                 <!-- Prawa strona - Ustawienia czcionki -->
@@ -522,11 +523,9 @@
                     <Button Content="↺" 
                            Click="ResetFont_Click" 
                            Style="{StaticResource ModernButtonStyle}"
-                            FontSize="{DynamicResource AppFontSizeBig}"
+                           FontSize="{DynamicResource AppFontSizeLarge}"
                            ToolTip="Reset rozmiaru czcionki"
-                           Width="40"
-                           Height="40"
-                           Padding="0"/>
+                           Width="40"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -549,15 +548,100 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Tytuł -->
-                    <TextBlock Grid.Row="0" 
-                              Text="Nawigacja" 
-                              FontSize="{DynamicResource AppFontSizeLarge}" 
-                              FontWeight="Bold" 
-                              Foreground="#333333"
-                              Margin="0,0,0,15"/>
+                    <!-- Tytuł z przyciskami sortowania -->
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Nagłówek Nawigacja -->
+                        <StackPanel Grid.Row="0" Grid.Column="0" 
+                                   Orientation="Horizontal"
+                                   VerticalAlignment="Center">
+                            <TextBlock x:Name="NawigacjaText"
+                                      Text="Nawigacja" 
+                                      FontSize="{DynamicResource AppFontSizeLarge}" 
+                                      FontWeight="Bold" 
+                                      Foreground="#333333"
+                                      VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <!-- Przyciski sortowania -->
+                        <StackPanel Grid.Row="0" Grid.Column="2" 
+                                   Orientation="Horizontal" 
+                                   VerticalAlignment="Center">
+                            <Button Content="🔤" 
+                                   Command="{Binding SortByNameCommand}"
+                                   IsEnabled="{Binding IsPackageLoaded}"
+                                   Width="32" Height="32"
+                                   FontSize="14"
+                                   FontWeight="Thin"
+                                    Margin="0,0,4,0"
+                                   ToolTip="Sortuj alfabetycznie">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSortByNameActive}" Value="True">
+                                                <Setter Property="Background" Value="#0D47A1"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            <Button Content="📅↑" 
+                                   Command="{Binding SortByDateAscCommand}"
+                                   IsEnabled="{Binding IsPackageLoaded}"
+                                   Width="32" Height="32"
+                                   FontSize="12"
+                                   FontWeight="Thin"
+                                    Margin="0,0,4,0"
+                                   ToolTip="Sortuj wg daty: wcześniej → później">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSortByDateAscActive}" Value="True">
+                                                <Setter Property="Background" Value="#0D47A1"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            <Button Content="📅↓" 
+                                   Command="{Binding SortByDateDescCommand}"
+                                   IsEnabled="{Binding IsPackageLoaded}"
+                                   Width="32" Height="32"
+                                   FontSize="12"
+                                   FontWeight="Thin"
+                                   ToolTip="Sortuj wg daty: później → wcześniej">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSortByDateDescActive}" Value="True">
+                                                <Setter Property="Background" Value="#0D47A1"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </StackPanel>
+                        
+                        <!-- Informacja o aktywnym sortowaniu -->
+                        <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+                                  Text="{Binding SortingInfoText}"
+                                  Visibility="{Binding IsSortingActive, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                  FontSize="{DynamicResource AppFontSize}"
+                                  Foreground="#0078D4"
+                                  FontStyle="Italic"
+                                  Margin="0,5,0,0"/>
+                    </Grid>
 
-                    <!-- Zakładki z adaptacyjnym wyświetlaniem - ZAWSZE W JEDNEJ LINII -->
+                    <!-- Zakładki z adaptacyjnym wyświetlaniem -->
                     <TabControl Grid.Row="1" 
                                x:Name="NavigationTabControl"
                                SelectedIndex="{Binding ActiveTabIndex}"
@@ -769,7 +853,7 @@
                     <Border Grid.Row="0" 
                            Background="#F3F8FC" 
                            CornerRadius="4" 
-                           Padding="10, 5, 10, 5"
+                           Padding="10, 5, 5, 5"
                            Margin="0,0,0,15">
                         <Border.Effect>
                             <DropShadowEffect Color="#0078D4" BlurRadius="5" ShadowDepth="0" Opacity="0.1"/>
@@ -799,15 +883,14 @@
                             <Button x:Name="PrintMetadataButton"
                                    Grid.Column="1"
                                    Content="🖨"
+                                   FontWeight="Thin"
                                    Click="PrintMetadata_Click"
                                    Style="{StaticResource ModernButtonStyle}"
                                    Width="40"
-                                   Height="40"
-                                   FontSize="{DynamicResource AppFontSizeLarge}"
-                                   Padding="0"
+                                   FontSize="16"
+                                   Margin="0,0,3,0"
                                    ToolTip="Drukuj metadane"
                                    VerticalAlignment="Center"
-                                   Cursor="Hand"
                                    IsEnabled="False">
                                 <Button.Effect>
                                     <DropShadowEffect Color="#000000" 

@@ -129,7 +129,7 @@ namespace eADMwizualizator.Helpers
 
                 if (extension == ".pdf")
                 {
-                    PdfContentControlExtensions.SetPdfSource(contentControl, filePath);
+                    PdfContentControl.SetPdfSource(contentControl, filePath);
                     return;
                 }
 
@@ -265,7 +265,7 @@ namespace eADMwizualizator.Helpers
 
             if (!string.IsNullOrEmpty(pdfPath) && File.Exists(pdfPath))
             {
-                PdfContentControlExtensions.SetPdfSource(contentControl, pdfPath);
+                PdfContentControl.SetPdfSource(contentControl, pdfPath);
             }
             else
             {
@@ -292,12 +292,13 @@ namespace eADMwizualizator.Helpers
 
                 try
                 {
-                    doc = await Task.Run(() => XDocument.Load(xmlPath));
+                    // ZABEZPIECZENIE: Bezpieczne ładowanie XML przez SecurityValidator
+                    doc = await Task.Run(() => SecurityValidator.LoadXDocumentSecurely(xmlPath));
                     isValidXml = true;
                 }
                 catch (System.Xml.XmlException)
                 {
-                    // Plik nie jest poprawnym XML - spróbuj wyczyścić i załadować ponownie
+                    // Fallback - próba naprawy pliku
                     try
                     {
                         var content = await Task.Run(() => File.ReadAllText(xmlPath, Encoding.UTF8));
@@ -331,7 +332,7 @@ namespace eADMwizualizator.Helpers
                     var scrollViewer = new ScrollViewer
                     {
                         HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-                        VerticalScrollBarVisibility = ScrollBarVisibility.Visible,  // Zmieniono z Auto na Visible
+                        VerticalScrollBarVisibility = ScrollBarVisibility.Visible,
                         Content = treeView
                     };
 

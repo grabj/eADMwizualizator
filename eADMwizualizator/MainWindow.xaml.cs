@@ -104,7 +104,7 @@ namespace eADMwizualizator
         }
 
         /// <summary>
-        /// Adaptacyjnie ukrywa/pokazuje tekst w zakładkach w zależności od szerokości panelu i rozmiaru czcionki
+        /// Adaptacyjnie ukrywa/pokazuje tekst w zakładkach i nagłówku w zależności od szerokości panelu i rozmiaru czcionki
         /// </summary>
         private void UpdateTabTextVisibility()
         {
@@ -118,7 +118,7 @@ namespace eADMwizualizator
                 
                 // Pobierz aktualny rozmiar czcionki AppFontSizeLarge
                 double fontSizeLarge = DefaultFontSize + 4; // Fallback
-                if (Application.Current.Resources.Contains("AppFontSizeLarge") && 
+                if (Application.Current.Resources.Contains("AppFontSizeLarge") &&
                     Application.Current.Resources["AppFontSizeLarge"] is double fsl)
                 {
                     fontSizeLarge = fsl;
@@ -126,7 +126,7 @@ namespace eADMwizualizator
 
                 // Oblicz czy powinien być widoczny tekst
                 // Formuła: szerokość < próg LUB rozmiar czcionki > 20
-                bool shouldHideText = availableWidth < TabTextVisibilityThreshold || fontSizeLarge > 20; // Zmień próg czcionki
+                bool shouldHideText = availableWidth < TabTextVisibilityThreshold || fontSizeLarge > 20;
 
                 // Znajdź TextBlocki z tekstem w nagłówkach zakładek
                 var dokumentyText = this.FindName("DokumentyText") as System.Windows.Controls.TextBlock;
@@ -140,7 +140,7 @@ namespace eADMwizualizator
                 if (sprawyText != null) sprawyText.Visibility = visibility;
                 if (metadaneText != null) metadaneText.Visibility = visibility;
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 // Debug - pokaż błąd
                 System.Diagnostics.Debug.WriteLine($"UpdateTabTextVisibility Error: {ex.Message}");
@@ -160,7 +160,7 @@ namespace eADMwizualizator
                 await vm.LoadDirectoryFromArchiveAsync(picker.FileName);
                 vm.PackageName = Path.GetFileNameWithoutExtension(picker.FileName);
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 MessageBox.Show("Błąd: " + ex.Message);
             }
@@ -229,15 +229,15 @@ namespace eADMwizualizator
                     {
                         MessageBox.Show(
                             "Nie można uruchomić podglądu wydruku.\n\nSpróbuj użyć prawego przycisku myszy na dokumencie.", 
-                            "Informacja", 
-                            MessageBoxButton.OK, 
+                            "Informacja",
+                            MessageBoxButton.OK,
                             MessageBoxImage.Information);
                     }
                 }
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
-                MessageBox.Show($"Błąd podglądu wydruku: {ex.Message}", "Błąd", 
+                MessageBox.Show($"Błąd podglądu wydruku: {ex.Message}", "Błąd",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

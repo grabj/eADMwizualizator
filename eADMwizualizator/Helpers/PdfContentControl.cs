@@ -6,13 +6,13 @@ using System.Windows.Controls;
 namespace eADMwizualizator.Helpers
 {
     // helper tworzy WebBrowser i nawiguje do pliku.
-    public static class PdfContentControlExtensions
+    public static class PdfContentControl
     {
         public static readonly DependencyProperty PdfSourceProperty =
             DependencyProperty.RegisterAttached(
                 "PdfSource",
                 typeof(string),
-                typeof(PdfContentControlExtensions),
+                typeof(PdfContentControl),
                 new PropertyMetadata(null, OnPdfSourceChanged));
 
         public static void SetPdfSource(DependencyObject element, string? value)

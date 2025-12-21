@@ -25,8 +25,16 @@ namespace eADMwizualizator.ViewModels
         public string? ActivePackagePath
         {
             get => _activePackagePath;
-            private set => SetProperty(ref _activePackagePath, value);
+            private set
+            {
+                if (SetProperty(ref _activePackagePath, value))
+                {
+                    OnPropertyChanged(nameof(IsPackageLoaded));
+                }
+            }
         }
+
+        public bool IsPackageLoaded => !string.IsNullOrEmpty(_activePackagePath) && _activePackagePath != @".\temp";
 
         private string? _packageName;
         public string? PackageName
@@ -54,12 +62,65 @@ namespace eADMwizualizator.ViewModels
         internal static readonly List<string> eadmPackageExtensions = new List<string> { "tar", "zip" };
 
         public ICommand SelectViewCommand { get; private set; }
+        public ICommand SortByNameCommand { get; private set; }
+        public ICommand SortByDateAscCommand { get; private set; }
+        public ICommand SortByDateDescCommand { get; private set; }
+
+        private bool _sortNameAscending = true;
+
+        // Śledzenie aktywnego sortowania dla każdej zakładki
+        private SortType _dokumentySortType = SortType.None;
+        private SortType _sprawySortType = SortType.None;
+
+        /// <summary>
+        /// Aktualny typ sortowania dla aktywnej zakładki.
+        /// </summary>
+        public SortType ActiveSortType
+        {
+            get => ActiveTabIndex == 0 ? _dokumentySortType : (ActiveTabIndex == 1 ? _sprawySortType : SortType.None);
+        }
+
+        /// <summary>
+        /// Tekst informujący o aktywnym sortowaniu.
+        /// </summary>
+        public string SortingInfoText
+        {
+            get
+            {
+                var sortType = ActiveSortType;
+                return sortType switch
+                {
+                    SortType.NameAsc => "Sortowanie: A → Z",
+                    SortType.NameDesc => "Sortowanie: Z → A",
+                    SortType.DateAsc => "Sortowanie: wcześniej → później",
+                    SortType.DateDesc => "Sortowanie: później → wcześniej",
+                    _ => string.Empty
+                };
+            }
+        }
+
+        /// <summary>
+        /// Czy wyświetlać informację o sortowaniu.
+        /// </summary>
+        public bool IsSortingActive => ActiveSortType != SortType.None && (ActiveTabIndex == 0 || ActiveTabIndex == 1);
+
+        // Właściwości do bindowania stanu przycisków
+        public bool IsSortByNameActive => ActiveSortType == SortType.NameAsc || ActiveSortType == SortType.NameDesc;
+        public bool IsSortByDateAscActive => ActiveSortType == SortType.DateAsc;
+        public bool IsSortByDateDescActive => ActiveSortType == SortType.DateDesc;
 
         private int _activeTabIndex = 1; //zakładka sprawy domyślnie
         public int ActiveTabIndex
         {
             get => _activeTabIndex;
-            set => SetProperty(ref _activeTabIndex, value);
+            set
+            {
+                if (SetProperty(ref _activeTabIndex, value))
+                {
+                    // Powiadom o zmianie stanu sortowania przy zmianie zakładki
+                    NotifySortingChanged();
+                }
+            }
         }
 
         private string? _selectedViewName;
@@ -79,26 +140,21 @@ namespace eADMwizualizator.ViewModels
             set
             {
                 var changed = SetProperty(ref _selectedDocumentFile, value);
-                
-                // ZAWSZE wykonaj akcję gdy wartość nie jest null, nawet jeśli się nie zmieniła
+
                 if (value != null)
                 {
-                    // Najpierw wyczyść ścieżkę (żeby wymusić zmianę w bindingu)
                     _selectedFilePath = null;
                     OnPropertyChanged(nameof(SelectedFilePath));
-                    
-                    // Potem ustaw właściwą ścieżkę
+
                     _selectedFilePath = value.Sciezka;
                     OnPropertyChanged(nameof(SelectedFilePath));
-                    
+
                     UpdateSelectedDocumentDisplayName();
-                    
-                    // Wywołanie asynchroniczne żeby nie blokować UI
+
                     _ = LoadSelectedDocumentFile();
                 }
                 else if (changed)
                 {
-                    // Tylko gdy wartość zmienia się na null
                     _selectedFilePath = null;
                     OnPropertyChanged(nameof(SelectedFilePath));
                     UpdateSelectedDocumentDisplayName();
@@ -106,14 +162,12 @@ namespace eADMwizualizator.ViewModels
             }
         }
 
-        private Plik? _selectedMetadataFile;    
+        private Plik? _selectedMetadataFile;
         public Plik? SelectedMetadataFile
         {
             get => _selectedMetadataFile;
             set
             {
-                // SetProperty zwróci false gdy referencja się nie zmieni.
-                // W takim przypadku wymuszamy odświeżenie metadanych jeśli wartość nie jest null.
                 var changed = SetProperty(ref _selectedMetadataFile, value);
                 if (!changed)
                 {
@@ -171,27 +225,21 @@ namespace eADMwizualizator.ViewModels
             set
             {
                 var changed = SetProperty(ref _selectedSprawaNode, value);
-                
-                // ZAWSZE wykonaj akcję gdy wartość nie jest null, nawet jeśli się nie zmieniła
+
                 if (value != null)
                 {
-                    // Po wybraniu węzła sprawy:
-                    // 1. Wymuś wyczyszczenie dokumentu (środkowy panel)
                     _selectedDocumentFile = null;
                     OnPropertyChanged(nameof(SelectedDocumentFile));
-                    
-                    // Ustaw specjalną ścieżkę dla pustego widoku
+
                     _selectedFilePath = "about:blank";
                     OnPropertyChanged(nameof(SelectedFilePath));
-                    
+
                     SelectedDocumentDisplayName = string.Empty;
 
-                    // 2. Załaduj metadane sprawy (prawy panel)
                     LoadSelectedSprawaMetadata();
                 }
                 else if (changed)
                 {
-                    // Tylko gdy wartość zmienia się na null
                     _selectedFilePath = null;
                     OnPropertyChanged(nameof(SelectedFilePath));
                     SelectedDocumentDisplayName = string.Empty;
@@ -215,6 +263,171 @@ namespace eADMwizualizator.ViewModels
             SelectedViewName = ViewNames.ElementAtOrDefault(ActiveTabIndex);
 
             SelectViewCommand = new RelayCommand(param => SelectView(param));
+            SortByNameCommand = new RelayCommand(_ => SortByName());
+            SortByDateAscCommand = new RelayCommand(_ => SortByDateAscending());
+            SortByDateDescCommand = new RelayCommand(_ => SortByDateDescending());
+        }
+
+        #endregion
+
+        #region Sortowanie
+
+        /// <summary>
+        /// Sortuje aktualną kolekcję alfabetycznie po nazwie. Przełącza między A-Z / Z-A.
+        /// </summary>
+        public void SortByName()
+        {
+            if (ActiveTabIndex == 0) // Dokumenty
+            {
+                var sorted = _sortNameAscending
+                    ? Dokumenty.OrderBy(d => GetDisplayName(d), StringComparer.OrdinalIgnoreCase).ToList()
+                    : Dokumenty.OrderByDescending(d => GetDisplayName(d), StringComparer.OrdinalIgnoreCase).ToList();
+                ApplySortedCollection(Dokumenty, sorted);
+                _dokumentySortType = _sortNameAscending ? SortType.NameAsc : SortType.NameDesc;
+            }
+            else if (ActiveTabIndex == 1) // Sprawy
+            {
+                var sorted = _sortNameAscending
+                    ? Sprawy.OrderBy(s => GetDisplayName(s), StringComparer.OrdinalIgnoreCase).ToList()
+                    : Sprawy.OrderByDescending(s => GetDisplayName(s), StringComparer.OrdinalIgnoreCase).ToList();
+                ApplySortedCollection(Sprawy, sorted);
+                BuildNodes();
+                
+                // Sortuj dokumenty wewnątrz każdej sprawy
+                SortDocumentsInNodes(
+                    docs => _sortNameAscending 
+                        ? docs.OrderByDescending(d => GetDisplayName(d), StringComparer.OrdinalIgnoreCase).ToList()
+                        : docs.OrderBy(d => GetDisplayName(d), StringComparer.OrdinalIgnoreCase).ToList());
+                
+                _sprawySortType = _sortNameAscending ? SortType.NameAsc : SortType.NameDesc;
+            }
+            _sortNameAscending = !_sortNameAscending;
+            NotifySortingChanged();
+        }
+
+        /// <summary>
+        /// Sortuje aktualną kolekcję od najwcześniejszej do najpóźniejszej daty.
+        /// </summary>
+        public void SortByDateAscending()
+        {
+            if (ActiveTabIndex == 0) // Dokumenty
+            {
+                var sorted = Dokumenty.OrderBy(d => GetDocumentDate(d) ?? DateTime.MaxValue).ToList();
+                ApplySortedCollection(Dokumenty, sorted);
+                _dokumentySortType = SortType.DateAsc;
+            }
+            else if (ActiveTabIndex == 1) // Sprawy
+            {
+                var sorted = Sprawy.OrderBy(s => GetSprawaDate(s) ?? DateTime.MaxValue).ToList();
+                ApplySortedCollection(Sprawy, sorted);
+                BuildNodes();
+                
+                // Sortuj dokumenty wewnątrz każdej sprawy
+                SortDocumentsInNodes(
+                    docs => docs.OrderBy(d => GetDocumentDate(d) ?? DateTime.MaxValue).ToList());
+                
+                _sprawySortType = SortType.DateAsc;
+            }
+            NotifySortingChanged();
+        }
+
+        /// <summary>
+        /// Sortuje aktualną kolekcję od najpóźniejszej do najwcześniejszej daty.
+        /// </summary>
+        public void SortByDateDescending()
+        {
+            if (ActiveTabIndex == 0) // Dokumenty
+            {
+                var sorted = Dokumenty.OrderByDescending(d => GetDocumentDate(d) ?? DateTime.MinValue).ToList();
+                ApplySortedCollection(Dokumenty, sorted);
+                _dokumentySortType = SortType.DateDesc;
+            }
+            else if (ActiveTabIndex == 1) // Sprawy
+            {
+                var sorted = Sprawy.OrderByDescending(s => GetSprawaDate(s) ?? DateTime.MinValue).ToList();
+                ApplySortedCollection(Sprawy, sorted);
+                BuildNodes();
+                
+                // Sortuj dokumenty wewnątrz każdej sprawy
+                SortDocumentsInNodes(
+                    docs => docs.OrderByDescending(d => GetDocumentDate(d) ?? DateTime.MinValue).ToList());
+                
+                _sprawySortType = SortType.DateDesc;
+            }
+            NotifySortingChanged();
+        }
+
+        /// <summary>
+        /// Sortuje dokumenty wewnątrz każdego węzła sprawy według podanej funkcji sortowania.
+        /// </summary>
+        private void SortDocumentsInNodes(Func<ObservableCollection<Plik>, List<Plik>> sortFunc)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                foreach (var node in Nodes)
+                {
+                    if (node.Documents.Count <= 1) continue;
+                    
+                    var sortedDocs = sortFunc(node.Documents);
+                    node.Documents.Clear();
+                    foreach (var doc in sortedDocs)
+                    {
+                        node.Documents.Add(doc);
+                    }
+                }
+            });
+        }
+
+        /// <summary>
+        /// Pomocnicza metoda do aktualizacji ObservableCollection po sortowaniu.
+        /// </summary>
+        private static void ApplySortedCollection(ObservableCollection<Plik> collection, List<Plik> sorted)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                collection.Clear();
+                foreach (var item in sorted)
+                {
+                    collection.Add(item);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Pobiera nazwę wyświetlaną pliku (Tytul lub nazwa z ścieżki).
+        /// </summary>
+        private static string GetDisplayName(Plik plik)
+        {
+            return Path.GetFileName(plik.Sciezka) ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Pobiera datę dokumentu z jego metadanych.
+        /// </summary>
+        private DateTime? GetDocumentDate(Plik doc)
+        {
+            if (doc is Metadata meta)
+                return meta.Data;
+
+            var docFileName = Path.GetFileName(doc.Sciezka);
+            if (string.IsNullOrEmpty(docFileName)) return null;
+
+            var metadataFileName = docFileName + ".xml";
+            var metaFile = Metadane.FirstOrDefault(m =>
+                string.Equals(Path.GetFileName(m.Sciezka), metadataFileName, StringComparison.OrdinalIgnoreCase));
+
+            return (metaFile as Metadata)?.Data;
+        }
+
+        /// <summary>
+        /// Pobiera datę sprawy (DataOd lub DataDo).
+        /// </summary>
+        private static DateTime? GetSprawaDate(Plik sprawa)
+        {
+            if (sprawa is Metadata meta)
+                return meta.DataOd ?? meta.DataDo ?? meta.Data;
+
+            return null;
         }
 
         #endregion
@@ -230,35 +443,141 @@ namespace eADMwizualizator.ViewModels
             if (!eadmPackageExtensions.Contains(ext))
                 throw new NotSupportedException("Nieobsługiwany format pliku.");
 
+            // ZABEZPIECZENIE 1: Walidacja archiwum przed rozpakowaniem
+            var archiveValidation = SecurityValidator.ValidateFile(archivePath);
+            if (!archiveValidation.IsValid)
+            {
+                throw new Exception($"Walidacja archiwum nie powiodła się: {archiveValidation.GetErrorMessage()}");
+            }
+
+            // Pobierz rozmiar archiwum do walidacji zip bomb
+            var archiveFileInfo = new FileInfo(archivePath);
+            var compressedSize = archiveFileInfo.Length;
+
             string targetDir = Helpers.TempDirectoryManager.CreateRunTempDir();
 
-            // rozpakowywanie w tle
-            await Task.Run(() =>
+            var extractionResult = await Task.Run(() =>
             {
+                var stats = new ExtractionStats();
+                long totalUncompressedSize = 0;
+                
                 using Stream fileStream = File.Open(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 using var reader = ReaderFactory.Open(fileStream);
+                
                 while (reader.MoveToNextEntry())
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    if (!reader.Entry.IsDirectory)
+                    
+                    if (reader.Entry.IsDirectory)
+                        continue;
+
+                    var entryName = reader.Entry.Key;
+                    var entrySize = reader.Entry.Size;
+                    stats.TotalFiles++;
+
+                    // ZABEZPIECZENIE: Ochrona przed zip bomb - sprawdź liczbę plików
+                    if (stats.TotalFiles > SecurityValidator.MaxFilesInArchive)
                     {
-                        var attempts = 3;
-                        for (int i = 0; i < attempts; i++)
+                        stats.SecurityIssues.Add($"Przekroczono limit plików ({SecurityValidator.MaxFilesInArchive})");
+                        break;
+                    }
+
+                    // ZABEZPIECZENIE: Ochrona przed zip bomb - sprawdź łączny rozmiar
+                    totalUncompressedSize += entrySize;
+                    if (totalUncompressedSize > SecurityValidator.MaxTotalUncompressedSize)
+                    {
+                        stats.SecurityIssues.Add($"Przekroczono limit rozmiaru ({SecurityValidator.MaxTotalUncompressedSize / (1024 * 1024)} MB)");
+                        break;
+                    }
+
+                    // ZABEZPIECZENIE: Ochrona przed zip bomb - sprawdź współczynnik kompresji wpisu
+                    if (reader.Entry.CompressedSize > 0 && 
+                        !SecurityValidator.ValidateArchiveEntry(reader.Entry.CompressedSize, entrySize))
+                    {
+                        stats.SkippedFiles++;
+                        stats.SecurityIssues.Add($"Podejrzany współczynnik kompresji: {entryName}");
+                        continue;
+                    }
+
+                    // Walidacja ścieżki (Zip Slip)
+                    if (!SecurityValidator.ValidatePathTraversal(targetDir, entryName))
+                    {
+                        stats.SkippedFiles++;
+                        stats.SecurityIssues.Add($"Zip Slip: {entryName}");
+                        continue; // Pomiń niebezpieczny wpis
+                    }
+
+                    // ZABEZPIECZENIE 3: Sprawdź rozszerzenie przed wypakowaniem
+                    var fileName = Path.GetFileName(entryName);
+                    if (SecurityValidator.IsExtensionBlacklisted(fileName))
+                    {
+                        stats.SkippedFiles++;
+                        stats.SecurityIssues.Add($"Czarna lista: {fileName}");
+                        continue; // Pomiń plik z czarnej listy
+                    }
+
+                    // Wypakuj plik
+                    var attempts = 3;
+                    for (int i = 0; i < attempts; i++)
+                    {
+                        try
                         {
-                            try
+                            reader.WriteEntryToDirectory(targetDir, new ExtractionOptions 
+                            { 
+                                ExtractFullPath = true, 
+                                Overwrite = true 
+                            });
+                            
+                            stats.ExtractedFiles++;
+
+                            // ZABEZPIECZENIE 4: Walidacja magic bytes po rozpakowaniu
+                            var extractedPath = Path.Combine(targetDir, entryName);
+                            if (File.Exists(extractedPath))
                             {
-                                reader.WriteEntryToDirectory(targetDir, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
-                                break;
+                                if (!SecurityValidator.ValidateMagicBytes(extractedPath))
+                                {
+                                    stats.SecurityIssues.Add($"Niepoprawne magic bytes: {fileName}");
+                                    // Można usunąć plik lub pozostawić z ostrzeżeniem
+                                }
                             }
-                            catch (IOException)
-                            {
-                                if (i == attempts - 1) throw;
-                                Task.Delay(200, cancellationToken).Wait(cancellationToken);
-                            }
+                            
+                            break;
+                        }
+                        catch (IOException)
+                        {
+                            if (i == attempts - 1) throw;
+                            Task.Delay(200, cancellationToken).Wait(cancellationToken);
                         }
                     }
                 }
+
+                // Końcowa walidacja zip bomb
+                var zipBombResult = SecurityValidator.ValidateArchiveForZipBomb(
+                    compressedSize, totalUncompressedSize, stats.TotalFiles);
+                
+                if (!zipBombResult.IsValid)
+                {
+                    foreach (var error in zipBombResult.Errors)
+                    {
+                        stats.SecurityIssues.Add(error);
+                    }
+                }
+
+                return stats;
             }, cancellationToken);
+
+            if (extractionResult.SecurityIssues.Any())
+            {
+                var message = $"Wypakowano archiwum z ostrzeżeniami:\n" +
+                             $"- Wypakowane pliki: {extractionResult.ExtractedFiles}/{extractionResult.TotalFiles}\n" +
+                             $"- Pominięte pliki: {extractionResult.SkippedFiles}\n\n" +
+                             $"Problemy bezpieczeństwa:\n{string.Join("\n", extractionResult.SecurityIssues.Take(10))}";
+                
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show(message, "Ostrzeżenia bezpieczeństwa", MessageBoxButton.OK, MessageBoxImage.Warning);
+                });
+            }
 
             // po rozpakowaniu — załaduj katalog
             await LoadDirectoryAsync(new Plik(targetDir, Path.GetFileName(targetDir)));
@@ -290,11 +609,15 @@ namespace eADMwizualizator.ViewModels
                 var entries = await Task.Run(() => EnumerateEntriesSafe(paczka.Sciezka, _scanFolders.Token), _scanFolders.Token);
                 tempFolderCollection = new ReadOnlyCollection<string>(entries);
 
-                // dodawaj elementy stopniowo na wątku UI
                 foreach (var entry in tempFolderCollection)
                 {
                     _scanFolders.Token.ThrowIfCancellationRequested();
-                    AddEntryToCollections(entry);
+                    
+                    // ZABEZPIECZENIE 5: Waliduj każdy plik przed dodaniem
+                    if (SecurityValidator.IsExtensionAllowed(entry))
+                    {
+                        AddEntryToCollections(entry);
+                    }
                 }
 
                 ActivePackagePath = paczka.Sciezka;
@@ -304,7 +627,7 @@ namespace eADMwizualizator.ViewModels
             {
                 // anulowano skanowanie
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 // logging: w prawdziwym projekcie wyrzuć do loggera
                 Application.Current.Dispatcher.Invoke(() =>
@@ -484,10 +807,9 @@ namespace eADMwizualizator.ViewModels
 
                 if (!string.IsNullOrEmpty(xslPath) && File.Exists(xslPath))
                 {
-                    // Wykonanie transformacji poza wątkiem UI
+                    // ZABEZPIECZENIE 6: Użyj bezpiecznego ładowania XML
                     var htmlContent = await Task.Run(() => XslTransformer.TransformXmlToHtml(candidatePath, xslPath));
 
-                    // Aktualizacja na wątku UI
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         MetadataHtmlContent = htmlContent;
@@ -504,7 +826,7 @@ namespace eADMwizualizator.ViewModels
                     });
                 }
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -551,7 +873,7 @@ namespace eADMwizualizator.ViewModels
                     foreach (var e in entries) SelectedMetadata.Add(e);
                 }
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 SelectedMetadata.Add(new MetadataEntry { Name = "Błąd", Value = ex.Message });
             }
@@ -754,7 +1076,7 @@ namespace eADMwizualizator.ViewModels
                     foreach (var e in entries) SelectedMetadata.Add(e);
                 }
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 SelectedMetadata.Add(new MetadataEntry { Name = "Błąd", Value = ex.Message });
             }
@@ -903,6 +1225,44 @@ namespace eADMwizualizator.ViewModels
 
             // lokalna helper aby uniknąć wielokrotnego dostępu
             bool _view_indexes_try_get(string name, out int index) { index = 0; return _viewIndexes != null && _viewIndexes.TryGetValue(name, out index); }
+        }
+
+        #endregion
+
+        #region Klasa pomocnicza dla statystyk
+
+        private class ExtractionStats
+        {
+            public int TotalFiles { get; set; }
+            public int ExtractedFiles { get; set; }
+            public int SkippedFiles { get; set; }
+            public List<string> SecurityIssues { get; } = new();
+        }
+
+        #endregion
+
+        #region Typy sortowania
+
+        public enum SortType
+        {
+            None,
+            NameAsc,
+            NameDesc,
+            DateAsc,
+            DateDesc
+        }
+
+        /// <summary>
+        /// Powiadamia UI o zmianie stanu sortowania.
+        /// </summary>
+        private void NotifySortingChanged()
+        {
+            OnPropertyChanged(nameof(ActiveSortType));
+            OnPropertyChanged(nameof(SortingInfoText));
+            OnPropertyChanged(nameof(IsSortingActive));
+            OnPropertyChanged(nameof(IsSortByNameActive));
+            OnPropertyChanged(nameof(IsSortByDateAscActive));
+            OnPropertyChanged(nameof(IsSortByDateDescActive));
         }
 
         #endregion

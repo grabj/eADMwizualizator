@@ -3,12 +3,75 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace eADMwizualizator.Helpers
 {
     public static class MetadataLoader
     {
+        #region Ochrona przed XXE (XML External Entity)
+
+        /// <summary>
+        /// Tworzy bezpieczne ustawienia XmlReaderSettings chroni¹ce przed XXE
+        /// </summary>
+        public static XmlReaderSettings CreateSecureXmlReaderSettings()
+        {
+            return new XmlReaderSettings
+            {
+                DtdProcessing = DtdProcessing.Prohibit, // Blokuj DTD
+                XmlResolver = null, // Blokuj rozwi¹zywanie zewnêtrznych encji
+                MaxCharactersFromEntities = 1024, // Ogranicz znaki z encji
+                MaxCharactersInDocument = 10485760, // 10 MB limit
+            };
+        }
+
+        /// <summary>
+        /// Bezpiecznie ³aduje dokument XML chroni¹c przed XXE
+        /// </summary>
+        public static XmlDocument LoadXmlSecurely(string xmlPath)
+        {
+            if (!File.Exists(xmlPath))
+                throw new FileNotFoundException("Plik XML nie istnieje", xmlPath);
+
+            var doc = new XmlDocument
+            {
+                XmlResolver = null // Wy³¹cz resolver dla XmlDocument
+            };
+
+            using var reader = XmlReader.Create(xmlPath, CreateSecureXmlReaderSettings());
+            doc.Load(reader);
+
+            return doc;
+        }
+
+        /// <summary>
+        /// Bezpiecznie ³aduje dokument XML z strumienia
+        /// </summary>
+        public static XmlDocument LoadXmlSecurely(Stream stream)
+        {
+            var doc = new XmlDocument
+            {
+                XmlResolver = null
+            };
+
+            using var reader = XmlReader.Create(stream, CreateSecureXmlReaderSettings());
+            doc.Load(reader);
+
+            return doc;
+        }
+
+        /// <summary>
+        /// Bezpiecznie ³aduje XDocument chroni¹c przed XXE
+        /// </summary>
+        private static XDocument LoadXDocumentSecurely(string xmlPath)
+        {
+            using var reader = XmlReader.Create(xmlPath, CreateSecureXmlReaderSettings());
+            return XDocument.Load(reader);
+        }
+
+        #endregion
+
         // Zwraca listê prostych par nazwa/wartoœæ z pliku XML (u¿ywane przy wyœwietlaniu SelectedMetadata)
         public static IEnumerable<MetadataEntry> LoadMetadataEntries(string path)
         {
@@ -17,7 +80,7 @@ namespace eADMwizualizator.Helpers
 
             try
             {
-                var root = XElement.Load(path);
+                var root = LoadXDocumentSecurely(path).Root;
 
                 // Pobieramy wszystkie liœciowe elementy (bez pod-elementów) i tworzymy pary "œcie¿ka/element" -> wartoœæ
                 var leaves = root.Descendants().Where(x => !x.HasElements);
@@ -46,7 +109,7 @@ namespace eADMwizualizator.Helpers
 
             try
             {
-                var root = XElement.Load(path);
+                var root = LoadXDocumentSecurely(path).Root;
                 var ns = root.Name.Namespace; // obs³uga domyœlnego namespace
 
                 // XML Sprawy
@@ -128,7 +191,7 @@ namespace eADMwizualizator.Helpers
 
             try
             {
-                var root = XElement.Load(path);
+                var root = LoadXDocumentSecurely(path).Root;
                 var ns = root.Name.Namespace; // obs³uga domyœlnego namespace
 
                 string? grupowanieValue = null;
