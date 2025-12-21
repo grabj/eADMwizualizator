@@ -149,7 +149,7 @@ namespace eADMwizualizator
 
         private async void OtworzPaczke_Click(object sender, RoutedEventArgs e)
         {
-            var picker = new OpenFileDialog {Filter = "Archive files (*.zip;*.tar)|*.zip;*.tar;|All files (*.*)|*.*"};
+            var picker = new OpenFileDialog {Filter = "Pliki archiwum (*.zip;*.tar)|*.zip;*.tar;|All files (*.*)|*.*"};
             if (picker.ShowDialog() != true) return;
 
             var vm = (PlikViewModel)this.DataContext;
@@ -158,7 +158,8 @@ namespace eADMwizualizator
             try
             {
                 await vm.LoadDirectoryFromArchiveAsync(picker.FileName);
-                vm.PackageName = Path.GetFileNameWithoutExtension(picker.FileName);
+                // PackageName jest teraz ustawiane wewnątrz LoadDirectoryFromArchiveAsync
+                // tylko po pomyślnej walidacji
             }
             catch (System.Exception ex)
             {

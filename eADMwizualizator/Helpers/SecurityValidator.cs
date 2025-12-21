@@ -68,6 +68,77 @@ namespace eADMwizualizator.Helpers
             { ".pptx", new[] { new byte[] { 0x50, 0x4B, 0x03, 0x04 } } },
         };
 
+        // Wymagane katalogi w paczce eADM
+        private static readonly HashSet<string> RequiredEadmFolders = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "dokumenty",
+            "sprawy",
+            "metadane"
+        };
+
+        #endregion
+
+        #region Walidacja struktury paczki eADM
+
+        /// <summary>
+        /// Sprawdza czy katalog zawiera prawidłową strukturę paczki eADM (dokumenty, sprawy, metadane)
+        /// </summary>
+        /// <param name="directoryPath">Ścieżka do katalogu do sprawdzenia</param>
+        /// <returns>Wynik walidacji struktury</returns>
+        public static EadmStructureValidationResult ValidateEadmStructure(string directoryPath)
+        {
+            var result = new EadmStructureValidationResult();
+
+            if (string.IsNullOrWhiteSpace(directoryPath))
+            {
+                result.IsValid = false;
+                result.Errors.Add("Ścieżka katalogu jest pusta.");
+                return result;
+            }
+
+            if (!Directory.Exists(directoryPath))
+            {
+                result.IsValid = false;
+                result.Errors.Add("Katalog nie istnieje.");
+                return result;
+            }
+
+            try
+            {
+                var existingFolders = Directory.GetDirectories(directoryPath)
+                    .Select(d => Path.GetFileName(d))
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                result.FoundFolders = existingFolders.ToList();
+
+                foreach (var requiredFolder in RequiredEadmFolders)
+                {
+                    if (existingFolders.Contains(requiredFolder))
+                    {
+                        result.PresentFolders.Add(requiredFolder);
+                    }
+                    else
+                    {
+                        result.MissingFolders.Add(requiredFolder);
+                    }
+                }
+
+                result.IsValid = result.MissingFolders.Count == 0;
+
+                if (!result.IsValid)
+                {
+                    result.Errors.Add($"Brak wymaganych katalogów: {string.Join(", ", result.MissingFolders)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                result.IsValid = false;
+                result.Errors.Add($"Błąd podczas sprawdzania struktury: {ex.Message}");
+            }
+
+            return result;
+        }
+
         #endregion
 
         #region Ochrona przed Zip Bombs - limity
@@ -491,6 +562,20 @@ namespace eADMwizualizator.Helpers
         public long CompressionRatio { get; set; }
         public int FileCount { get; set; }
         public long TotalUncompressedSize { get; set; }
+        public List<string> Errors { get; } = new();
+
+        public string GetErrorMessage() => string.Join(Environment.NewLine, Errors);
+    }
+
+    /// <summary>
+    /// Wynik walidacji struktury paczki eADM
+    /// </summary>
+    public class EadmStructureValidationResult
+    {
+        public bool IsValid { get; set; }
+        public List<string> MissingFolders { get; } = new();
+        public List<string> PresentFolders { get; } = new();
+        public List<string> FoundFolders { get; set; } = new();
         public List<string> Errors { get; } = new();
 
         public string GetErrorMessage() => string.Join(Environment.NewLine, Errors);

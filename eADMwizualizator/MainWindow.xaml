@@ -490,7 +490,7 @@
                         HorizontalAlignment="Left"/>
 
                 <!-- Prawa strona - Ustawienia czcionki -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" ClipToBounds="False">
                     <TextBlock Text="Rozmiar czcionki:" 
                               VerticalAlignment="Center"
                               FontSize="{DynamicResource AppFontSize}"
@@ -525,7 +525,8 @@
                            Style="{StaticResource ModernButtonStyle}"
                            FontSize="{DynamicResource AppFontSizeLarge}"
                            ToolTip="Reset rozmiaru czcionki"
-                           Width="40"/>
+                           Width="40"
+                           Margin="0,0,6,0"/>
                 </StackPanel>
             </Grid>
         </Border>

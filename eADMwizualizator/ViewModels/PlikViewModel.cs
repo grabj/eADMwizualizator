@@ -579,8 +579,35 @@ namespace eADMwizualizator.ViewModels
                 });
             }
 
-            // po rozpakowaniu — załaduj katalog
+            // WALIDACJA STRUKTURY eADM - sprawdź PRZED załadowaniem plików
+            var structureValidation = SecurityValidator.ValidateEadmStructure(targetDir);
+            if (!structureValidation.IsValid)
+            {
+                // Usuń rozpakowany katalog tymczasowy
+                try
+                {
+                    Directory.Delete(targetDir, recursive: true);
+                }
+                catch { /* ignoruj błędy usuwania */ }
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show(
+                        $"Wybrany plik nie jest prawidłową paczką eADM.\n\n" +
+                        $"Wymagana struktura katalogów: dokumenty, sprawy, metadane\n" +
+                        $"Brakujące katalogi: {string.Join(", ", structureValidation.MissingFolders)}",
+                        "Błąd struktury paczki",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                });
+                return;
+            }
+
+            // po rozpakowaniu i walidacji struktury — załaduj katalog
             await LoadDirectoryAsync(new Plik(targetDir, Path.GetFileName(targetDir)));
+            
+            // Ustaw PackageName TYLKO po pomyślnym załadowaniu
+            PackageName = Path.GetFileNameWithoutExtension(archivePath);
         }
 
         public async Task LoadDirectoryAsync(Plik paczka)
@@ -938,20 +965,11 @@ namespace eADMwizualizator.ViewModels
         {
             Nodes.Clear();
 
-            // helper lokalny do normalizacji kluczy (usuwa ścieżki, rozszerzenia, trim, lowercase)
+            // helper lokalny do normalizacji kluczy (trim, lowercase)
             static string? NormalizeKey(string? raw)
             {
                 if (string.IsNullOrWhiteSpace(raw)) return null;
-                try
-                {
-                    var last = Path.GetFileName(raw.Trim());
-                    var noExt = Path.GetFileNameWithoutExtension(last);
-                    return noExt?.Trim().ToLowerInvariant();
-                }
-                catch
-                {
-                    return raw.Trim().ToLowerInvariant();
-                }
+                return raw.Trim().ToLowerInvariant();
             }
 
             // Lista węzłów razem z ich możliwymi kluczami (WartoscId, nazwa pliku bez ext)

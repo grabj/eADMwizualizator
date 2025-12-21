@@ -25,7 +25,7 @@
 					margin: 0;
 					padding: 15px;
 					background-color: #f5f5f5;
-					line-height: 1.6;
+					line-height: 1.5;
 					}
 
 					.container {
@@ -48,9 +48,10 @@
 
 					h3.alternative {
 					color: #555;
-					font-weight: 400;
+					font-weight: 500;
 					margin-top: 5px;
 					font-style: italic;
+					line-height: 1.4;
 					}
 
 					.section {
