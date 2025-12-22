@@ -18,8 +18,8 @@ namespace eADMwizualizator.Helpers
         // Biała lista - dozwolone rozszerzenia dla aplikacji eADM
         private static readonly HashSet<string> WhitelistedExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
-            // Dokumenty tekstowe
-            ".txt", ".pdf", ".doc", ".docx", ".odt", ".rtf",
+            // Dokumenty tekstowe i logi
+            ".txt", ".pdf", ".doc", ".docx", ".odt", ".rtf", ".log", ".md",
             
             // Arkusze kalkulacyjne
             ".xls", ".xlsx", ".csv", ".ods",
@@ -37,10 +37,8 @@ namespace eADMwizualizator.Helpers
             ".zip", ".tar", ".gz", ".7z",
             
             // Web i tekstowe
-            ".html", ".htm", ".css", ".js", ".json",
+            ".html", ".htm", ".css", ".json",
             
-            // Logi i markdown
-            ".log", ".md"
         };
 
         // Czarna lista - potencjalnie niebezpieczne rozszerzenia (zawsze blokowane)
@@ -144,9 +142,10 @@ namespace eADMwizualizator.Helpers
         #region Ochrona przed Zip Bombs - limity
 
         /// <summary>
-        /// Maksymalny współczynnik kompresji (stosunek rozmiaru rozpakowanego do skompresowanego)
+        /// Maksymalny akceptowalny współczynnik kompresji dla archiwów ustawowo nieskompresowanych (1.1:1)
+        /// Niewielki margines uwzględnia metadane i nagłówki
         /// </summary>
-        public const int MaxCompressionRatio = 100;
+        public const double MaxCompressionRatioForUncompressed = 1.1;
 
         /// <summary>
         /// Maksymalna liczba plików w archiwum
@@ -182,16 +181,16 @@ namespace eADMwizualizator.Helpers
                 result.Errors.Add($"Zbyt duży rozmiar po rozpakowaniu: {uncompressedSize / (1024 * 1024)} MB (max: {MaxTotalUncompressedSize / (1024 * 1024)} MB)");
             }
 
-            // Sprawdź współczynnik kompresji
+            // Sprawdź czy archiwum jest właściwie nieskompresowane (1:1)
             if (compressedSize > 0)
             {
-                var ratio = uncompressedSize / compressedSize;
-                if (ratio > MaxCompressionRatio)
+                var ratio = (double)uncompressedSize / compressedSize;
+                if (ratio > MaxCompressionRatioForUncompressed)
                 {
                     result.IsValid = false;
-                    result.Errors.Add($"Podejrzany współczynnik kompresji: {ratio}:1 (max: {MaxCompressionRatio}:1) - możliwy atak zip bomb");
+                    result.Errors.Add($"Niewłaściwy współczynnik kompresji: {ratio:F2}:1 (oczekiwano ~1:1 dla archiwum nieskompresowanego)");
                 }
-                result.CompressionRatio = ratio;
+                result.CompressionRatio = (long)ratio;
             }
 
             result.FileCount = fileCount;
@@ -201,15 +200,15 @@ namespace eADMwizualizator.Helpers
         }
 
         /// <summary>
-        /// Sprawdza pojedynczy wpis archiwum pod kątem zip bomb
+        /// Sprawdza pojedynczy wpis archiwum - dla archiwów nieskompresowanych stosunek powinien być ~1:1
         /// </summary>
         public static bool ValidateArchiveEntry(long compressedSize, long uncompressedSize)
         {
             if (compressedSize <= 0)
                 return true; // Nie można obliczyć współczynnika
 
-            var ratio = uncompressedSize / compressedSize;
-            return ratio <= MaxCompressionRatio;
+            var ratio = (double)uncompressedSize / compressedSize;
+            return ratio <= MaxCompressionRatioForUncompressed;
         }
 
         #endregion

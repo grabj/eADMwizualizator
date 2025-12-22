@@ -481,10 +481,12 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Lewa strona - Otwórz paczkę -->
+                <!-- Przycisk Otwórz paczkę -->
                 <Button Grid.Column="0"
                         Content="📦 Otwórz paczkę eADM" 
                         Click="OtworzPaczke_Click" 
                         Style="{StaticResource ModernButtonStyle}"
+                        FontSize="{DynamicResource AppFontSizeButton}"
                         MinWidth="180"
                         Padding="5,0"
                         HorizontalAlignment="Left"/>
@@ -520,10 +522,11 @@
                               TextAlignment="Center"
                               Margin="0,0,10,0"/>
 
+                    <!-- Przycisk Reset -->
                     <Button Content="↺" 
                            Click="ResetFont_Click" 
                            Style="{StaticResource ModernButtonStyle}"
-                           FontSize="{DynamicResource AppFontSizeLarge}"
+                           FontSize="{DynamicResource AppFontSizeButton}"
                            ToolTip="Reset rozmiaru czcionki"
                            Width="40"
                            Margin="0,0,6,0"/>
@@ -567,7 +570,7 @@
                                    VerticalAlignment="Center">
                             <TextBlock x:Name="NawigacjaText"
                                       Text="Nawigacja" 
-                                      FontSize="{DynamicResource AppFontSizeLarge}" 
+                                      FontSize="{DynamicResource AppFontSizeLarge}"
                                       FontWeight="Bold" 
                                       Foreground="#333333"
                                       VerticalAlignment="Center"/>
@@ -581,9 +584,9 @@
                                    Command="{Binding SortByNameCommand}"
                                    IsEnabled="{Binding IsPackageLoaded}"
                                    Width="32" Height="32"
-                                   FontSize="14"
+                                   FontSize="{DynamicResource AppFontSizeSmallButton}"
                                    FontWeight="Thin"
-                                    Margin="0,0,4,0"
+                                   Margin="0,0,4,0"
                                    ToolTip="Sortuj alfabetycznie">
                                 <Button.Style>
                                     <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
@@ -599,9 +602,9 @@
                                    Command="{Binding SortByDateAscCommand}"
                                    IsEnabled="{Binding IsPackageLoaded}"
                                    Width="32" Height="32"
-                                   FontSize="12"
+                                   FontSize="{DynamicResource AppFontSizeSmallButton}"
                                    FontWeight="Thin"
-                                    Margin="0,0,4,0"
+                                   Margin="0,0,4,0"
                                    ToolTip="Sortuj wg daty: wcześniej → później">
                                 <Button.Style>
                                     <Style TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
@@ -617,7 +620,7 @@
                                    Command="{Binding SortByDateDescCommand}"
                                    IsEnabled="{Binding IsPackageLoaded}"
                                    Width="32" Height="32"
-                                   FontSize="12"
+                                   FontSize="{DynamicResource AppFontSizeSmallButton}"
                                    FontWeight="Thin"
                                    ToolTip="Sortuj wg daty: później → wcześniej">
                                 <Button.Style>
@@ -707,7 +710,7 @@
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Tytul}" 
-                                                  FontSize="{DynamicResource AppFontSize}"
+                                                      FontSize="{DynamicResource AppFontSize}"
                                                   TextTrimming="CharacterEllipsis">
                                             <TextBlock.ToolTip>
                                                 <TextBlock>
@@ -751,8 +754,8 @@
                                         <HierarchicalDataTemplate.ItemTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Tytul}"
-                                                          FontSize="{DynamicResource AppFontSize}"
-                                                          TextTrimming="CharacterEllipsis"
+                                                              FontSize="{DynamicResource AppFontSize}"
+                                                              TextTrimming="CharacterEllipsis"
                                                           ToolTip="{Binding Tytul}"/>
                                             </DataTemplate>
                                         </HierarchicalDataTemplate.ItemTemplate>
@@ -881,6 +884,7 @@
                             </StackPanel>
                             
                             <!-- Prawa strona - przycisk drukowania -->
+                            <!-- Przycisk Drukuj -->
                             <Button x:Name="PrintMetadataButton"
                                    Grid.Column="1"
                                    Content="🖨"
@@ -888,7 +892,7 @@
                                    Click="PrintMetadata_Click"
                                    Style="{StaticResource ModernButtonStyle}"
                                    Width="40"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource AppFontSizeButton}"
                                    Margin="0,0,3,0"
                                    ToolTip="Drukuj metadane"
                                    VerticalAlignment="Center"

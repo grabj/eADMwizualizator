@@ -14,10 +14,10 @@ namespace eADMwizualizator.Helpers
     public static class UniversalDocumentViewer
     {
         private static readonly string[] ImageExtensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif", ".ico" };
-        private static readonly string[] XmlExtensions = { ".xml", ".xades", ".xsl"};
-        private static readonly string[] TextExtensions = { ".txt", ".log", ".md", ".js", ".css", ".json" };
+        private static readonly string[] XmlExtensions = { ".xml", ".xades", ".xsl", ".xslt"};
+        private static readonly string[] TextExtensions = { ".txt", ".log", ".md", ".css", ".json" };
         private static readonly string[] OfficeDocumentExtensions = { ".doc", ".docx", ".odt", ".ppt", ".pptx", ".odp", ".xls", ".xlsx", ".csv" };
-        private static readonly string[] WebBrowserExtensions = { ".html",".htm" };
+        private static readonly string[] WebBrowserExtensions = { ".html",".htm", ".zip", ".tar", ".gz", ".7z", };
 
         public static readonly DependencyProperty DocumentSourceProperty =
             DependencyProperty.RegisterAttached(
@@ -127,6 +127,7 @@ namespace eADMwizualizator.Helpers
                     return;
                 }
 
+                // Pliki PDF
                 if (extension == ".pdf")
                 {
                     PdfContentControl.SetPdfSource(contentControl, filePath);
@@ -134,14 +135,11 @@ namespace eADMwizualizator.Helpers
                 }
 
                 // Dokumenty wyświetlanie przez WebBrowser
-                else
+                if (Array.IndexOf(WebBrowserExtensions, extension) >= 0)
                 {
                     await LoadHtmlFileAsync(contentControl, filePath);
                     return;
                 }
-
-
-
 
                 ShowUnsupportedMessage(contentControl, $"Nieobsługiwany format: {extension}");
             }

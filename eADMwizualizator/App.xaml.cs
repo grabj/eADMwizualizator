@@ -11,7 +11,6 @@ namespace eADMwizualizator
     public partial class App : Application
     {
         private static readonly string SciezkaAktywnejPaczki = @".\temp";
-        private const double DefaultFontSize = 13.0;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -22,6 +21,8 @@ namespace eADMwizualizator
                 this.Resources["AppFontSize"] = defaultSize;
                 this.Resources["AppFontSizeLarge"] = defaultSize + 4;
                 this.Resources["AppFontSizeBig"] = defaultSize + 2;
+                this.Resources["AppFontSizeSmallButton"] = defaultSize;
+                this.Resources["AppFontSizeButton"] = 16.0;
             }
             catch
             {
