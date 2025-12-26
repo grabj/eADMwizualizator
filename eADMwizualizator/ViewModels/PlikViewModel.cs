@@ -530,17 +530,33 @@ namespace eADMwizualizator.ViewModels
                             
                             stats.ExtractedFiles++;
 
-                            // ZABEZPIECZENIE 4: Walidacja magic bytes po rozpakowaniu
+                            // ZABEZPIECZENIE: Walidacja magic bytes po rozpakowaniu
                             var extractedPath = Path.Combine(targetDir, entryName);
+
                             if (File.Exists(extractedPath))
                             {
                                 if (!SecurityValidator.ValidateMagicBytes(extractedPath))
                                 {
+                                    // zarejestruj problem
                                     stats.SecurityIssues.Add($"Niepoprawne magic bytes: {fileName}");
-                                    // Można usunąć plik lub pozostawić z ostrzeżeniem
+
+                                    // spróbuj bezpiecznie usunąć plik 
+                                    try
+                                    {
+                                        File.Delete(extractedPath);
+
+                                        // aktualizuj statystyki: plik został usunięty — zmniejsz liczbę wypakowanych i zwiększ liczbę pominiętych
+                                        stats.ExtractedFiles = Math.Max(0, stats.ExtractedFiles - 1);
+                                        stats.SkippedFiles++;
+
+                                    }
+                                    catch (Exception exDel)
+                                    {
+                                        stats.SecurityIssues.Add($"Błąd usuwania niepoprawnego pliku {fileName}: {exDel.Message}");
+                                    }
                                 }
                             }
-                            
+
                             break;
                         }
                         catch (IOException)

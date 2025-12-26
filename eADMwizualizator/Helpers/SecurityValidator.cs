@@ -142,10 +142,11 @@ namespace eADMwizualizator.Helpers
         #region Ochrona przed Zip Bombs - limity
 
         /// <summary>
-        /// Maksymalny akceptowalny współczynnik kompresji dla archiwów ustawowo nieskompresowanych (1.1:1)
+        /// Maksymalny akceptowalny współczynnik kompresji dla archiwów ustawowo nieskompresowanych (1:1)
         /// Niewielki margines uwzględnia metadane i nagłówki
+        /// zmiana!!
         /// </summary>
-        public const double MaxCompressionRatioForUncompressed = 1.1;
+        public const double MaxCompressionRatioForUncompressed = 10.0;
 
         /// <summary>
         /// Maksymalna liczba plików w archiwum
