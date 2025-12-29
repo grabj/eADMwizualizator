@@ -135,7 +135,7 @@
             </Setter>
         </Style>
 
-        <!-- 4. Style przycisków - ROZJAŚNIONE KOLORY -->
+        <!-- 4. Style przycisków  -->
         <Style x:Key="ModernButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#2196F3"/>
             <Setter Property="Foreground" Value="White"/>
@@ -177,6 +177,20 @@
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="Background" Value="#BBDEFB"/>
                     <Setter Property="Foreground" Value="#FF838E94"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ExitButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+            <!-- tylko nadpisujemy kolory i zachowanie dla stanów -->
+            <Setter Property="Background" Value="#C0392B"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#A93226"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#7B241C"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -322,7 +336,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            
+
                             <!-- Główny wiersz z zawartością -->
                             <Border x:Name="ItemBorder"
                                    Grid.Row="0"
@@ -335,7 +349,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    
+
                                     <!-- Toggle button -->
                                     <ToggleButton x:Name="Expander"
                                                 Grid.Column="0"
@@ -399,7 +413,7 @@
                                             </ControlTemplate>
                                         </ToggleButton.Template>
                                     </ToggleButton>
-                                    
+
                                     <!-- Dynamiczny padding -->
                                     <ContentPresenter x:Name="PART_Header"
                                                     Grid.Column="1"
@@ -409,25 +423,25 @@
                                                     HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
                                 </Grid>
                             </Border>
-                            
+
                             <!-- Elementy potomne -->
                             <ItemsPresenter x:Name="ItemsHost"
                                            Grid.Row="1"
                                            Margin="4,0,0,0"
                                            Visibility="Collapsed"/>
                         </Grid>
-                        
+
                         <ControlTemplate.Triggers>
                             <!-- Ukryj strzałkę jeśli brak dzieci -->
                             <Trigger Property="HasItems" Value="False">
                                 <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
                             </Trigger>
-                            
+
                             <!-- Pokaż dzieci gdy rozwinięte -->
                             <Trigger Property="IsExpanded" Value="True">
                                 <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible"/>
                             </Trigger>
-                            
+
                             <!-- Efekt hover -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="ItemBorder" Property="Background">
@@ -439,14 +453,14 @@
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
-                            
+
                             <!-- Efekt selekcji -->
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="ItemBorder" Property="Background" Value="#E8F4FF"/>
                                 <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#0078D4"/>
                                 <Setter TargetName="ItemBorder" Property="BorderThickness" Value="1"/>
                             </Trigger>
-                            
+
                             <!-- Gdy zaznaczony i hover równocześnie -->
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
@@ -522,14 +536,23 @@
                               TextAlignment="Center"
                               Margin="0,0,10,0"/>
 
-                    <!-- Przycisk Reset -->
+                    <!-- Przycisk Reset czcionki -->
                     <Button Content="↺" 
                            Click="ResetFont_Click" 
                            Style="{StaticResource ModernButtonStyle}"
                            FontSize="{DynamicResource AppFontSizeButton}"
                            ToolTip="Reset rozmiaru czcionki"
                            Width="40"
-                           Margin="0,0,6,0"/>
+                           Margin="0,0,10,0"/>
+
+                    <!-- Przycisk Wyjścia -->
+                    <Button x:Name="ExitButton"
+                           Content="✖"
+                           Click="ExitButton_Click"
+                           Style="{StaticResource ExitButtonStyle}"
+                           FontSize="{DynamicResource AppFontSizeSmallButton}"
+                           ToolTip="Zamknij aplikację"
+                           Width="40"/>
                 </StackPanel>
             </Grid>
         </Border>

@@ -41,7 +41,7 @@ namespace eADMwizualizator
             // Sprawdź widoczność tekstu w zakładkach przy starcie
             UpdateTabTextVisibility();
             
-            // WAŻNE: Nasłuchuj na zmiany rozmiaru TabControl
+            // Nasłuchuj na zmiany rozmiaru TabControl
             var tabControl = this.FindName("NavigationTabControl") as System.Windows.Controls.TabControl;
             if (tabControl != null)
             {
@@ -55,7 +55,7 @@ namespace eADMwizualizator
             UpdateTabTextVisibility();
         }
 
-        // DODAJ: Nasłuchuj zmian rozmiaru TabControl (gdy GridSplitter się porusza)
+        // Nasłuchuj zmian rozmiaru TabControl (gdy GridSplitter się porusza)
         private void TabControl_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             UpdateTabTextVisibility();
@@ -194,6 +194,21 @@ namespace eADMwizualizator
             UpdateTabTextVisibility();
         }
         #endregion
+
+        // Przycisk Wyjścia - potwierdzenie
+        private void ExitButton_Click(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show(
+                "Czy na pewno chcesz zamknąć Wizualizator paczki eADM?",
+                "Opuszczanie aplikacji",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                Application.Current.Shutdown();
+            }
+        }
 
         // Obsługa wyboru w drzewie spraw - korzysta z PlikViewModel jako pośrednika
         private void SprawyTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
