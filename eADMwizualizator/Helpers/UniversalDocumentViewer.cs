@@ -17,7 +17,7 @@ namespace eADMwizualizator.Helpers
         private static readonly string[] XmlExtensions = { ".xml", ".xades", ".xsl", ".xslt"};
         private static readonly string[] TextExtensions = { ".txt", ".log", ".md", ".css", ".json" };
         private static readonly string[] OfficeDocumentExtensions = { ".doc", ".docx", ".odt", ".ppt", ".pptx", ".odp", ".xls", ".xlsx", ".csv" };
-        private static readonly string[] WebBrowserExtensions = { ".html",".htm", ".zip", ".tar", ".gz", ".7z", };
+        private static readonly string[] WebBrowserExtensions = { ".html",".htm" };
 
         public static readonly DependencyProperty DocumentSourceProperty =
             DependencyProperty.RegisterAttached(
@@ -134,7 +134,7 @@ namespace eADMwizualizator.Helpers
                     return;
                 }
 
-                // Dokumenty wyświetlanie przez WebBrowser
+                // Dokumenty wyświetlane przez WebView2
                 if (Array.IndexOf(WebBrowserExtensions, extension) >= 0)
                 {
                     await LoadHtmlFileAsync(contentControl, filePath);
@@ -406,21 +406,16 @@ namespace eADMwizualizator.Helpers
         {
             try
             {
-                var webBrowser = new WebBrowser
+                var webView = new Microsoft.Web.WebView2.Wpf.WebView2
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     VerticalAlignment = VerticalAlignment.Stretch
                 };
 
-                await Task.Run(() =>
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        webBrowser.Navigate(new Uri(htmlPath, UriKind.Absolute));
-                    });
-                });
+                await webView.EnsureCoreWebView2Async();
+                webView.Source = new Uri(htmlPath, UriKind.Absolute);
 
-                contentControl.Content = webBrowser;
+                contentControl.Content = webView;
             }
             catch (Exception ex)
             {

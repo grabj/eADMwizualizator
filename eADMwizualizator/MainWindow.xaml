@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:eADMwizualizator"
         xmlns:vm="clr-namespace:eADMwizualizator.ViewModels"
         xmlns:helpers="clr-namespace:eADMwizualizator.Helpers"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
         Title="Wizualizator paczki eADM" 
         Height="900" Width="1600"
@@ -934,10 +935,10 @@
                     <!-- Zawartość metadanych -->
                     <Grid Grid.Row="1">
                         <!-- WebBrowser dla HTML -->
-                        <WebBrowser x:Name="MetadataWebBrowser" 
-                                   helpers:WebBrowserHelper.Html="{Binding MetadataHtmlContent}"
-                                   Visibility="Collapsed"
-                                   d:IsHidden="True"/>
+                        <wv2:WebView2 x:Name="MetadataWebBrowser"
+                                      helpers:WebView2Helper.Html="{Binding MetadataHtmlContent}"
+                                      Visibility="Collapsed"
+                                      d:IsHidden="True"/>
 
                         <!-- ListView dla surowych metadanych -->
                         <ListView x:Name="Metadata_List" 

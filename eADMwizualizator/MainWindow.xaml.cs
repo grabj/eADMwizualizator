@@ -68,18 +68,12 @@ namespace eADMwizualizator
                 if (sender is PlikViewModel vm)
                 {
                     bool hasHtml = !string.IsNullOrEmpty(vm.MetadataHtmlContent);
-                    
+
                     MetadataWebBrowser.Visibility = hasHtml ? Visibility.Visible : Visibility.Collapsed;
                     Metadata_List.Visibility = hasHtml ? Visibility.Collapsed : Visibility.Visible;
-                    
-                    // WAŻNE: Włącz/wyłącz przycisk drukowania
                     PrintMetadataButton.IsEnabled = hasHtml;
-                    
-                    // Ustaw HTML bezpośrednio
-                    if (hasHtml)
-                    {
-                        WebBrowserHelper.SetHtml(MetadataWebBrowser, vm.MetadataHtmlContent);
-                    }
+
+                    // NIE trzeba już ustawiać HTML ręcznie, robi to helper przez property
                 }
             }
             else if (e.PropertyName == nameof(PlikViewModel.PackageName))
@@ -230,28 +224,27 @@ namespace eADMwizualizator
 
         #region Drukowanie metadanych
         
-        private void PrintMetadata_Click(object sender, RoutedEventArgs e)
+        // Drukowanie przez WebView2Helper
+        private async void PrintMetadata_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 if (MetadataWebBrowser.Visibility == Visibility.Visible)
                 {
-                    // Rozwiń zaawansowane metadane
                     ExpandAdvancedMetadata();
-                    System.Threading.Thread.Sleep(300);
-                    
-                    // Wywołaj podgląd wydruku przez WebBrowserHelper
-                    if (!WebBrowserHelper.ShowPrintPreview(MetadataWebBrowser))
+                    await Task.Delay(300);
+
+                    if (!await WebView2Helper.ShowPrintPreviewAsync(MetadataWebBrowser))
                     {
                         MessageBox.Show(
-                            "Nie można uruchomić podglądu wydruku.\n\nSpróbuj użyć prawego przycisku myszy na dokumencie.", 
+                            "Nie można uruchomić podglądu wydruku.\n\nSpróbuj użyć prawego przycisku myszy na dokumencie.",
                             "Informacja",
                             MessageBoxButton.OK,
                             MessageBoxImage.Information);
                     }
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 MessageBox.Show($"Błąd podglądu wydruku: {ex.Message}", "Błąd",
                     MessageBoxButton.OK, MessageBoxImage.Error);
@@ -270,7 +263,11 @@ namespace eADMwizualizator
                     }
                 }
             ";
-            WebBrowserHelper.ExecuteScript(MetadataWebBrowser, script);
+            // Poprawka: użyj ExecuteScriptAsync dla WebView2
+            if (MetadataWebBrowser is Microsoft.Web.WebView2.Wpf.WebView2 webView2)
+            {
+                _ = webView2.ExecuteScriptAsync(script);
+            }
         }
 
         #endregion
