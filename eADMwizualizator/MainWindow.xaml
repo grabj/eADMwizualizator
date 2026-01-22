@@ -8,7 +8,8 @@
         xmlns:helpers="clr-namespace:eADMwizualizator.Helpers"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
-        Title="Wizualizator paczki eADM" 
+        Title="Wizualizator paczki eADM"
+        MinHeight="600" MinWidth="900"
         Height="900" Width="1600"
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
@@ -561,11 +562,11 @@
         <!-- Główna zawartość z GridSplitterami -->
         <Grid Grid.Row="1" Margin="15">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="350" MinWidth="200" MaxWidth="600"/>
+                <ColumnDefinition Width="2*" MinWidth="200" MaxWidth="600"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*" MinWidth="400"/>
+                <ColumnDefinition Width="5*" MinWidth="400"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="400" MinWidth="250" MaxWidth="600"/>
+                <ColumnDefinition Width="2.5*" MinWidth="250" MaxWidth="600"/>
             </Grid.ColumnDefinitions>
 
             <!-- Lewy panel - Nawigacja -->
